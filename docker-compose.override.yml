@@ -1,0 +1,8 @@
+# Chỉ dùng khi chạy local (`docker compose up` tự nạp file này).
+# Coolify chỉ dùng docker-compose.yml -> không publish port trên server.
+services:
+  api:
+    ports: ["127.0.0.1:8000:8000"]
+    environment:
+      APP_ENV: local
+      ENABLE_DOCS: "true"

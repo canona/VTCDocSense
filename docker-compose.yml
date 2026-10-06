@@ -1,0 +1,142 @@
+# Coolify: Docker Compose build pack, trỏ tới file này.
+# Không service nào publish port; public ra ngoài chỉ qua Cloudflare Tunnel -> api:8000.
+name: gp-ocr
+
+x-app-env: &app-env
+  APP_ENV: ${APP_ENV:-production}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  ENABLE_DOCS: ${ENABLE_DOCS:-false}
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-gpocr}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gpocr}
+  REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
+  DATA_DIR: /data
+  RETENTION_DAYS: ${RETENTION_DAYS:-30}
+  MAX_FILE_MB: ${MAX_FILE_MB:-20}
+  MAX_PAGES: ${MAX_PAGES:-30}
+  LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+  FALLBACK_ENABLED: ${FALLBACK_ENABLED:-false}
+  FALLBACK_PROVIDER: ${FALLBACK_PROVIDER:-}
+  PROVIDER_TIMEOUT_S: ${PROVIDER_TIMEOUT_S:-120}
+  PROVIDER_MAX_RETRIES: ${PROVIDER_MAX_RETRIES:-2}
+  MODEL_NAME: ${MODEL_NAME:-Qwen/Qwen3-VL-8B-Instruct}
+  VLLM_BASE_URL: http://vllm:8000/v1
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5-5}
+  OPENAI_COMPAT_BASE_URL: ${OPENAI_COMPAT_BASE_URL:-}
+  OPENAI_COMPAT_API_KEY: ${OPENAI_COMPAT_API_KEY:-}
+  OPENAI_COMPAT_MODEL: ${OPENAI_COMPAT_MODEL:-}
+  WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+  JOB_TIMEOUT_S: ${JOB_TIMEOUT_S:-900}
+
+services:
+  api:
+    build: .
+    image: gp-ocr-app:local
+    restart: unless-stopped
+    environment: *app-env
+    expose: ["8000"]
+    volumes:
+      - gp-data:/data
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  worker:
+    build: .
+    image: gp-ocr-app:local
+    restart: unless-stopped
+    command: ["arq", "app.worker.settings.WorkerSettings"]
+    environment: *app-env
+    volumes:
+      - gp-data:/data
+    healthcheck:
+      test: ["CMD", "arq", "--check", "app.worker.settings.WorkerSettings"]
+      interval: 60s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gpocr}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-gpocr}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"]
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  vllm:
+    profiles: [gpu]
+    image: vllm/vllm-openai:${VLLM_TAG:-latest}
+    restart: unless-stopped
+    entrypoint: ["vllm", "serve"]
+    command:
+      - ${MODEL_NAME:-Qwen/Qwen3-VL-8B-Instruct}
+      - --host=0.0.0.0
+      - --port=8000
+      - --max-model-len=${VLLM_MAX_MODEL_LEN:-16384}
+      - --gpu-memory-utilization=${VLLM_GPU_MEM_UTIL:-0.90}
+      - --limit-mm-per-prompt={"image":${VLLM_MAX_IMAGES:-8}}
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+    ipc: host
+    expose: ["8000"]
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: ${VLLM_GPU_COUNT:-1}
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 900s  # lần đầu phải tải model
+      retries: 5
+
+  # Chỉ dùng khi KHÔNG dùng tunnel tích hợp của Coolify: docker compose --profile tunnel up
+  cloudflared:
+    profiles: [tunnel]
+    image: cloudflare/cloudflared:${CLOUDFLARED_TAG:-latest}
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "--metrics", "0.0.0.0:2000", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:2000", "ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  gp-data:
+  pg-data:
+  redis-data:
+  hf-cache:
