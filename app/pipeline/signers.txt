@@ -1,0 +1,6 @@
+# Người ký GP đã biết (mỗi dòng 1 họ tên). Ngoài danh sách -> hạ confidence 1 mức.
+# Lấy từ các GP mẫu trong eval/pdfs; bổ sung dần.
+Đỗ Quý Doãn
+Phạm Anh Tuấn
+Nguyễn Thanh Lâm
+Nguyễn Văn Hiếu

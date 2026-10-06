@@ -5,11 +5,12 @@ from pydantic import BaseModel, Field
 
 
 class PageInput(BaseModel):
-    """Một trang logic đưa vào model: text layer (nếu có) và/hoặc ảnh PNG."""
+    """Một trang logic đưa vào model: text layer (nếu có) và/hoặc ảnh (PNG/JPEG)."""
 
     page_no: int
     text: str | None = None
-    image_png: bytes | None = None
+    image: bytes | None = None
+    image_mime: str = "image/png"
 
 
 class ExtractionRequest(BaseModel):

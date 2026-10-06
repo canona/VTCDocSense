@@ -40,7 +40,32 @@ def build_provider(settings: Settings, name: ProviderName | None = None) -> Extr
             settings.openai_compat_model,
             api_key=key.get_secret_value() if key else None,
             timeout_s=settings.provider_timeout_s,
+            response_format=settings.openai_compat_response_format,
+            model_filter=settings.openai_compat_model_filter,
+        )
+    if name == "router":
+        from app.providers.openai_compat import OpenAICompatProvider
+
+        if not settings.router_base_url:
+            raise ValueError("router cần ROUTER_BASE_URL")
+        rkey = settings.router_api_key
+        return OpenAICompatProvider(
+            settings.router_base_url,
+            settings.router_model,
+            api_key=rkey.get_secret_value() if rkey else None,
+            timeout_s=settings.provider_timeout_s,
+            response_format=settings.openai_compat_response_format,
+            name="router",
+            model_filter=settings.router_model_filter,
         )
     if name == "anthropic":
-        raise NotImplementedError("Provider anthropic sẽ được triển khai ở M1")
+        from app.providers.anthropic import AnthropicProvider
+
+        if not settings.anthropic_api_key:
+            raise ValueError("anthropic cần ANTHROPIC_API_KEY")
+        return AnthropicProvider(
+            settings.anthropic_api_key.get_secret_value(),
+            settings.anthropic_model,
+            timeout_s=settings.provider_timeout_s,
+        )
     raise ValueError(f"Provider không hỗ trợ: {name}")

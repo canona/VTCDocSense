@@ -11,3 +11,4 @@ data/
 eval/pdfs/*
 !eval/pdfs/.gitkeep
 eval_report.*
+out/

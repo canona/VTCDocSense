@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-ProviderName = Literal["mock", "vllm", "anthropic", "openai_compat"]
+ProviderName = Literal["mock", "vllm", "anthropic", "openai_compat", "router"]
 
 
 class Settings(BaseSettings):
@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     max_file_mb: int = 20
     max_pages: int = 30
 
+    # Pipeline
+    render_dpi: int = 200
+    image_jpeg_quality: int = 85
+    # Tỷ lệ trường "low" vượt ngưỡng -> gọi provider phụ (nếu FALLBACK_ENABLED)
+    low_conf_fallback_ratio: float = 0.3
+
     # Provider
     llm_provider: ProviderName = "mock"
     fallback_enabled: bool = False
@@ -38,7 +44,18 @@ class Settings(BaseSettings):
 
     openai_compat_base_url: str | None = None
     openai_compat_api_key: SecretStr | None = None
+    # 1 model, danh sách ưu tiên "a,b,c" (tự chuyển khi hết quota), hoặc "auto" (lấy từ GET /models)
     openai_compat_model: str | None = None
+    # Regex lọc model khi dùng "auto", vd "gemini"
+    openai_compat_model_filter: str | None = None
+    # json_schema (strict) | json_object (schema trong prompt) - tự hạ cấp nếu endpoint trả 400
+    openai_compat_response_format: Literal["json_schema", "json_object"] = "json_schema"
+
+    # 9router (router OpenAI-compatible nội bộ), dùng làm provider chính hoặc dự phòng
+    router_base_url: str | None = None
+    router_api_key: SecretStr | None = None
+    router_model: str = "auto"
+    router_model_filter: str | None = None
 
     # Worker
     worker_concurrency: int = Field(default=2, ge=1)
@@ -50,6 +67,10 @@ class Settings(BaseSettings):
         "openai_compat_base_url",
         "openai_compat_api_key",
         "openai_compat_model",
+        "openai_compat_model_filter",
+        "router_base_url",
+        "router_api_key",
+        "router_model_filter",
         mode="before",
     )
     @classmethod
