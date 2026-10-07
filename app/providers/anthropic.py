@@ -46,11 +46,13 @@ class AnthropicProvider(ExtractionProvider):
         return content
 
     async def extract(self, req: ExtractionRequest) -> ExtractionResult:
+        model = req.model or self.model
         body = {
-            "model": self.model,
-            "max_tokens": self.max_tokens,
+            "model": model,
+            "max_tokens": req.max_tokens or self.max_tokens,
             "temperature": 0,
-            "system": req.system_prompt,
+            # Prompt caching: tools (schema) + system là phần cố định, cache tới hết system
+            "system": [{"type": "text", "text": req.system_prompt, "cache_control": {"type": "ephemeral"}}],
             "messages": [{"role": "user", "content": self._content(req)}],
             "tools": [
                 {
@@ -77,11 +79,14 @@ class AnthropicProvider(ExtractionProvider):
         if tool is None or not isinstance(tool.get("input"), dict):
             raise ProviderError(f"model không trả tool_use (stop_reason={payload.get('stop_reason')})")
         usage = payload.get("usage") or {}
+        cache_read = usage.get("cache_read_input_tokens") or 0
+        cache_write = usage.get("cache_creation_input_tokens") or 0
         return ExtractionResult(
             data=tool["input"],
             provider=self.name,
-            model=self.model,
-            input_tokens=usage.get("input_tokens", 0),
+            model=model,
+            input_tokens=usage.get("input_tokens", 0) + cache_read + cache_write,
+            cached_input_tokens=cache_read,
             output_tokens=usage.get("output_tokens", 0),
             duration_ms=int((time.perf_counter() - start) * 1000),
         )

@@ -19,6 +19,9 @@ WORKDIR /srv
 COPY --chown=app:app alembic.ini ./
 COPY --chown=app:app migrations ./migrations
 COPY --chown=app:app app ./app
+COPY --chown=app:app config ./config
+# Phản hồi LLM đã ghi (--record) để LLM_PROVIDER=mock phát lại
+COPY --chown=app:app tests/fixtures/llm_responses ./tests/fixtures/llm_responses
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

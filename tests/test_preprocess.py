@@ -58,3 +58,13 @@ def test_text_pages_are_not_deskewed_or_dropped() -> None:
     res = preprocess([_raw(1, None, A4, GP_2016_P1)])
     assert res.pages[0].kind == "content"
     assert res.pages[0].text == GP_2016_P1
+
+
+def test_short_page_on_later_sheet_kept_and_duplicate_sheet_dropped() -> None:
+    """Scan 2011 Bình Thuận: tờ 1 = [trắng | bìa], tờ 2 = [trang 1 | trang 2 ít chữ], tờ 3 trùng tờ 2."""
+    p1, p2 = text_page(lines=30), text_page(lines=6, bar_w=0.5)
+    sheets = [spread(blank_page(), cover_page()), spread(p1, p2), spread(p1, p2)]
+    raw = [RawPage(i + 1, *A3_LANDSCAPE, image=img) for i, img in enumerate(sheets)]
+    res = preprocess(raw, do_deskew=False)
+    assert [p.source for p in res.pages] == ["2L", "2R"]
+    assert sorted(p.kind for p in res.dropped) == ["blank", "cover", "duplicate", "duplicate"]

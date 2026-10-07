@@ -69,7 +69,7 @@ async def test_khac_skips_extraction() -> None:
     assert gp.needs_review
 
 
-async def test_invalid_json_retries_then_fallback() -> None:
+async def test_invalid_json_no_retry_then_fallback() -> None:
     bad = MockProvider(response={"loai_van_ban": "GP_HOAT_DONG_LUAT_2016", "an_pham": "không phải list"})
     good = MockProvider(responses={"GiayPhep": sample_extraction()})
     pre = PreprocessResult(pages=[LogicalPage(page_no=1, source="1", text=GP_2016_P1)], dropped=[])
@@ -82,7 +82,7 @@ async def test_invalid_json_retries_then_fallback() -> None:
         settings=SETTINGS,
         fallback=good,
     )
-    assert len(bad.calls) == 2  # 1 lần + 1 retry
+    assert len(bad.calls) == 1  # JSON sai schema: không retry cùng model (tốn tiền)
     assert len(good.calls) == 1
     assert gp.meta.provider == "mock" and gp.so_gp.value == "635/GP-BTTTT"
 

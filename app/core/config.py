@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-ProviderName = Literal["mock", "vllm", "anthropic", "openai_compat", "router"]
+ProviderName = Literal["mock", "gemini", "openai", "anthropic", "openai_compat", "router", "vllm"]
 
 
 class Settings(BaseSettings):
@@ -15,19 +15,47 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     enable_docs: bool = True
 
-    database_url: str = "postgresql+asyncpg://gpocr:gpocr@postgres:5432/gpocr"
+    database_url: str = "postgresql+asyncpg://docsense:docsense@postgres:5432/docsense"
     redis_url: str = "redis://redis:6379/0"
 
     data_dir: Path = Path("/data")
     retention_days: int = 30
     max_file_mb: int = 20
     max_pages: int = 30
+    max_upload_mb: int = 100  # 1 request upload (ZIP); Cloudflare giới hạn 100MB
+
+    # Bảo vệ API nội bộ (/api/*) cho tới khi có Cloudflare Access (M3):
+    # có token -> bắt buộc "Authorization: Bearer <token>"; không có token -> chỉ mở khi APP_ENV=local
+    internal_api_token: SecretStr | None = None
 
     # Pipeline
-    render_dpi: int = 200
+    render_dpi: int = 150
+    image_grayscale: bool = True
     image_jpeg_quality: int = 85
     # Tỷ lệ trường "low" vượt ngưỡng -> gọi provider phụ (nếu FALLBACK_ENABLED)
     low_conf_fallback_ratio: float = 0.3
+
+    # ----- Kỷ luật token -----
+    # Gọi API LLM thật (tốn tiền) chỉ khi bật cờ này (hoặc CLI --live); cache hit vẫn dùng được khi tắt
+    allow_live_llm: bool = False
+    llm_daily_budget_usd: float = Field(default=2.0, ge=0)
+    llm_max_calls_per_run: int = Field(default=10, ge=0)  # 1 run = 1 lệnh CLI hoặc 1 document trong worker
+    llm_cache_enabled: bool = True
+    llm_cache_dir: Path | None = None  # mặc định <DATA_DIR>/llm_cache
+    llm_ledger_dir: Path | None = None  # sổ chi phí theo ngày, mặc định <DATA_DIR>/llm_ledger
+    llm_fixtures_dir: Path = Path("tests/fixtures/llm_responses")  # mock replay / --record
+    pricing_file: Path = Path("config/pricing.toml")
+    # true: model chưa có đơn giá -> từ chối gọi thật. false: vẫn gọi, chi phí ghi 0 (ngân sách ngày
+    # không có tác dụng, chỉ còn LLM_MAX_CALLS_PER_RUN chặn)
+    llm_require_pricing: bool = False
+    # Phân tầng model (ghi đè model mặc định của provider): rẻ cho PDF có lớp chữ, mạnh cho scan
+    model_text: str | None = None
+    model_vision: str | None = None
+    max_output_tokens: int = 8192
+    # Mức "thinking" (none/minimal/low/medium/high); trống: gemini dùng "low", provider khác không gửi
+    llm_reasoning_effort: str | None = None
+    classify_max_tokens: int = 300
+    use_batch_api: bool = False  # dự phòng, chưa triển khai (xem README)
 
     # Provider
     llm_provider: ProviderName = "mock"
@@ -38,6 +66,14 @@ class Settings(BaseSettings):
 
     model_name: str = "Qwen/Qwen3-VL-8B-Instruct"
     vllm_base_url: str = "http://vllm:8000/v1"
+
+    # LLM_PROVIDER=gemini|openai: OpenAI-compatible endpoint của nhà cung cấp
+    gemini_api_key: SecretStr | None = None
+    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
+    gemini_model: str | None = None
+    openai_api_key: SecretStr | None = None
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_model: str | None = None
 
     anthropic_api_key: SecretStr | None = None
     anthropic_model: str = "claude-sonnet-5-5"
@@ -63,6 +99,16 @@ class Settings(BaseSettings):
 
     @field_validator(
         "fallback_provider",
+        "internal_api_token",
+        "llm_cache_dir",
+        "llm_ledger_dir",
+        "model_text",
+        "llm_reasoning_effort",
+        "model_vision",
+        "gemini_api_key",
+        "gemini_model",
+        "openai_api_key",
+        "openai_model",
         "anthropic_api_key",
         "openai_compat_base_url",
         "openai_compat_api_key",
@@ -77,6 +123,18 @@ class Settings(BaseSettings):
     def _empty_as_none(cls, v: object) -> object:
         # Compose/Coolify truyền biến chưa đặt dưới dạng chuỗi rỗng
         return None if v == "" else v
+
+    @property
+    def cache_dir(self) -> Path:
+        return self.llm_cache_dir or self.data_dir / "llm_cache"
+
+    @property
+    def ledger_dir(self) -> Path:
+        return self.llm_ledger_dir or self.data_dir / "llm_ledger"
+
+    @property
+    def upload_dir(self) -> Path:
+        return self.data_dir / "uploads"
 
 
 @lru_cache

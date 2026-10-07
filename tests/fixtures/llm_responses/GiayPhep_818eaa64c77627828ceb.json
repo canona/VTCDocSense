@@ -1,0 +1,183 @@
+{
+ "data": {
+  "loai_van_ban": "GP_MO_CHUYEN_TRANG",
+  "ten_loai_giay_phep": "Giấy phép mở chuyên trang của báo điện tử",
+  "so_gp": {
+   "value": "82/GP-CBC",
+   "confidence": "high",
+   "note": "Số viết tay",
+   "source_page": 1
+  },
+  "ngay_cap": {
+   "value": "20/12/2021",
+   "confidence": "high",
+   "note": "Ngày viết tay",
+   "source_page": 1
+  },
+  "co_quan_cap": {
+   "value": "BỘ THÔNG TIN VÀ TRUYỀN THÔNG / CỤC BÁO CHÍ",
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "nguoi_ky": {
+   "value": "Nguyễn Thanh Lâm",
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "chuc_vu_nguoi_ky": {
+   "value": "CỤC TRƯỞNG",
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "can_cu_gp_goc": {
+   "value": "Giấy phép hoạt động báo chí số 757/GP-BTTTT ngày 19 tháng 11 năm 2021 của Bộ Thông tin và Truyền thông cấp cho Báo Bình Thuận",
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "van_ban_de_nghi": {
+   "value": "văn bản số 154-CV/TU ngày 01 tháng 06 năm 2021 và văn bản số 206-CV/TU ngày 04 tháng 8 năm 2021 của Tỉnh ủy Bình Thuận",
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "co_quan_chu_quan": {
+   "ten": {
+    "value": null,
+    "confidence": "high",
+    "note": "không ghi trực tiếp",
+    "source_page": null
+   },
+   "dia_chi": {
+    "value": null,
+    "confidence": "high",
+    "note": "không ghi trực tiếp",
+    "source_page": null
+   },
+   "dien_thoai": {
+    "value": null,
+    "confidence": "high",
+    "note": "không ghi trực tiếp",
+    "source_page": null
+   },
+   "fax": {
+    "value": null,
+    "confidence": "high",
+    "note": "không ghi trực tiếp",
+    "source_page": null
+   }
+  },
+  "co_quan_bao_chi": {
+   "ten": {
+    "value": "BÁO BÌNH THUẬN",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "loai_hinh_dien_tu": {
+    "value": "Báo Bình Thuận Online",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "ten_chuyen_trang": {
+    "value": "DU LỊCH",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   }
+  },
+  "ton_chi_muc_dich": {
+   "value": "- Thông tin, giới thiệu về lễ hội, thắng cảnh, ẩm thực, dịch vụ du lịch của tỉnh Bình Thuận; / - Quảng bá hình ảnh Bình Thuận đến với bạn bè trong nước và quốc tế.",
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "doi_tuong_phuc_vu": {
+   "value": "Bạn đọc của Báo Bình Thuận.",
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "pham_vi_phat_hanh": {
+   "value": null,
+   "confidence": "high",
+   "note": null,
+   "source_page": null
+  },
+  "phuong_thuc_phat_hanh": {
+   "value": null,
+   "confidence": "high",
+   "note": null,
+   "source_page": null
+  },
+  "tru_so": {
+   "dia_chi": {
+    "value": "Số 335 Võ Văn Kiệt, thành phố Phan Thiết, tỉnh Bình Thuận",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "dien_thoai": {
+    "value": "0252.3822830",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "fax": {
+    "value": "0252.3822817",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "email": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": null
+   },
+   "website": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": null
+   }
+  },
+  "hieu_luc": {
+   "value": "Giấy phép này có hiệu lực kể từ ngày ký.",
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "gp_duoc_thay_the": [],
+  "an_pham": [
+   {
+    "loai_hinh": "CHUYEN_TRANG",
+    "cap": null,
+    "ten_goi": "DU LỊCH",
+    "ngon_ngu": "Tiếng Việt và tiếng Anh",
+    "ky_han": null,
+    "thoi_gian_phat_hanh": null,
+    "khuon_kho": null,
+    "so_trang": null,
+    "so_luong": null,
+    "noi_in": null,
+    "ten_mien": "dulich.baobinhthuan.com.vn",
+    "isp": null
+   }
+  ],
+  "lanh_dao": []
+ },
+ "provider": "gemini",
+ "model": "gemini-3.5-flash",
+ "input_tokens": 3615,
+ "output_tokens": 1629,
+ "cached_input_tokens": 0,
+ "duration_ms": 8044,
+ "request_digest": "818eaa64c77627828ceb241372470e0734bff604e23b02507d0fdc6390a8971f",
+ "label": "BÁO BÌNH THUẬN/GP CT du lịch- Báo Bình Thuận_1.pdf",
+ "recorded_at": "2026-10-07"
+}

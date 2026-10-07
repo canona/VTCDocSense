@@ -1,0 +1,16 @@
+{
+ "data": {
+  "loai_van_ban": "GP_HOAT_DONG_LUAT_1989",
+  "ten_loai_giay_phep": "GIẤY PHÉP HOẠT ĐỘNG BÁO CHÍ IN",
+  "ly_do": "Văn bản là giấy phép hoạt động báo chí in căn cứ theo Luật Báo chí ngày 28 tháng 12 năm 1989."
+ },
+ "provider": "gemini",
+ "model": "gemini-3.5-flash-lite",
+ "input_tokens": 2420,
+ "output_tokens": 106,
+ "cached_input_tokens": 0,
+ "duration_ms": 2160,
+ "request_digest": "10b2662d6a690ffa6945dd633732d53245de400ed928523c8d32e2881eb42d30",
+ "label": "BÁO BÌNH THUẬN/GP Báo Bình Thuận2011_1.pdf",
+ "recorded_at": "2026-10-07"
+}

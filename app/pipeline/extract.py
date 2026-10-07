@@ -13,6 +13,13 @@ from app.providers import ExtractionProvider, ExtractionRequest, ExtractionResul
 log = logging.getLogger(__name__)
 
 
+class SchemaError(ProviderError):
+    """Model trả JSON sai schema. Không retry cùng model (temperature 0); để escalate/fallback xử lý."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, retryable=False)
+
+
 @dataclass
 class Usage:
     input_tokens: int = 0
@@ -34,7 +41,7 @@ async def call_with_retries[M: BaseModel](
     usage: Usage,
     backoff_s: float = 1.0,
 ) -> tuple[M, ExtractionResult]:
-    """Thử 1 + `retries` lần; JSON sai schema cũng tính là lỗi có thể thử lại."""
+    """Thử 1 + `retries` lần với lỗi mạng/quá tải; JSON sai schema ném `SchemaError` ngay."""
     last: ProviderError | None = None
     for attempt in range(retries + 1):
         if attempt:
@@ -57,7 +64,7 @@ async def call_with_retries[M: BaseModel](
                 "JSON sai schema",
                 extra={"provider": provider.name, "attempt": attempt, "errors": e.errors()[:5]},
             )
-            last = ProviderError(f"JSON không đúng schema: {e.error_count()} lỗi")
+            raise SchemaError(f"JSON không đúng schema: {e.error_count()} lỗi") from e
     assert last is not None
     raise last
 
@@ -85,10 +92,13 @@ async def extract_with_fallback[M: BaseModel](
         if fallback is None:
             raise
         log.warning("chuyển sang provider phụ", extra={"provider": fallback.name, "reason": "primary failed"})
+        # Model ghi đè (MODEL_TEXT/VISION) thuộc provider chính, provider phụ dùng model của nó
+        req = req.model_copy(update={"model": None})
         return await call_with_retries(fallback, req, model_cls, retries=retries, usage=usage)
 
     if fallback is not None and isinstance(obj, GiayPhepCore) and low_ratio(obj) > low_conf_ratio:
         log.warning("độ tin cậy thấp, thử provider phụ", extra={"provider": fallback.name})
+        req = req.model_copy(update={"model": None})
         try:
             obj2, res2 = await call_with_retries(fallback, req, model_cls, retries=retries, usage=usage)
         except ProviderError:

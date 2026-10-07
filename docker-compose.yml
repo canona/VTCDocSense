@@ -1,19 +1,35 @@
 # Coolify: Docker Compose build pack, trỏ tới file này.
 # Không service nào publish port; public ra ngoài chỉ qua Cloudflare Tunnel -> api:8000.
-name: gp-ocr
+name: vtcdocsense
 
 x-app-env: &app-env
   APP_ENV: ${APP_ENV:-production}
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
   ENABLE_DOCS: ${ENABLE_DOCS:-false}
-  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-gpocr}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-gpocr}
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-docsense}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-docsense}
   REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
   DATA_DIR: /data
   RETENTION_DAYS: ${RETENTION_DAYS:-30}
   MAX_FILE_MB: ${MAX_FILE_MB:-20}
   MAX_PAGES: ${MAX_PAGES:-30}
-  RENDER_DPI: ${RENDER_DPI:-200}
+  MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-100}
+  INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-}
+  RENDER_DPI: ${RENDER_DPI:-150}
+  IMAGE_GRAYSCALE: ${IMAGE_GRAYSCALE:-true}
   IMAGE_JPEG_QUALITY: ${IMAGE_JPEG_QUALITY:-85}
+  ALLOW_LIVE_LLM: ${ALLOW_LIVE_LLM:-false}
+  LLM_DAILY_BUDGET_USD: ${LLM_DAILY_BUDGET_USD:-2}
+  LLM_MAX_CALLS_PER_RUN: ${LLM_MAX_CALLS_PER_RUN:-10}
+  LLM_CACHE_ENABLED: ${LLM_CACHE_ENABLED:-true}
+  LLM_FIXTURES_DIR: /srv/tests/fixtures/llm_responses
+  PRICING_FILE: /srv/config/pricing.toml
+  LLM_REQUIRE_PRICING: ${LLM_REQUIRE_PRICING:-false}
+  MODEL_TEXT: ${MODEL_TEXT:-}
+  MODEL_VISION: ${MODEL_VISION:-}
+  MAX_OUTPUT_TOKENS: ${MAX_OUTPUT_TOKENS:-8192}
+  LLM_REASONING_EFFORT: ${LLM_REASONING_EFFORT:-}
+  CLASSIFY_MAX_TOKENS: ${CLASSIFY_MAX_TOKENS:-300}
+  USE_BATCH_API: ${USE_BATCH_API:-false}
   LOW_CONF_FALLBACK_RATIO: ${LOW_CONF_FALLBACK_RATIO:-0.3}
   LLM_PROVIDER: ${LLM_PROVIDER:-mock}
   FALLBACK_ENABLED: ${FALLBACK_ENABLED:-false}
@@ -22,6 +38,10 @@ x-app-env: &app-env
   PROVIDER_MAX_RETRIES: ${PROVIDER_MAX_RETRIES:-2}
   MODEL_NAME: ${MODEL_NAME:-Qwen/Qwen3-VL-8B-Instruct}
   VLLM_BASE_URL: http://vllm:8000/v1
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  GEMINI_MODEL: ${GEMINI_MODEL:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  OPENAI_MODEL: ${OPENAI_MODEL:-}
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
   ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5-5}
   OPENAI_COMPAT_BASE_URL: ${OPENAI_COMPAT_BASE_URL:-}
@@ -39,7 +59,7 @@ x-app-env: &app-env
 services:
   api:
     build: .
-    image: gp-ocr-app:local
+    image: vtcdocsense-app:local
     restart: unless-stopped
     environment: *app-env
     expose: ["8000"]
@@ -51,7 +71,7 @@ services:
 
   worker:
     build: .
-    image: gp-ocr-app:local
+    image: vtcdocsense-app:local
     restart: unless-stopped
     command: ["arq", "app.worker.settings.WorkerSettings"]
     environment: *app-env
@@ -71,9 +91,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-gpocr}
+      POSTGRES_USER: ${POSTGRES_USER:-docsense}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      POSTGRES_DB: ${POSTGRES_DB:-gpocr}
+      POSTGRES_DB: ${POSTGRES_DB:-docsense}
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:

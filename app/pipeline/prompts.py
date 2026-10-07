@@ -4,6 +4,9 @@ import json
 
 from app.models.schema import LoaiVanBan
 
+# Đổi khi sửa nội dung prompt -> khóa cache LLM đổi theo (không dùng lại phản hồi cũ)
+PROMPT_VERSION = "p1"
+
 SYSTEM_PROMPT = """Bạn là chuyên viên số hóa hồ sơ của Cục Báo chí Việt Nam.
 Nhiệm vụ: đọc Giấy phép báo chí (lớp chữ và/hoặc ảnh scan) và điền JSON đúng schema.
 

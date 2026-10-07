@@ -11,7 +11,7 @@ from PIL import Image
 
 from app.pipeline.pdf import RawPage, text_layer_ok
 
-PageKind = Literal["content", "cover", "blank"]
+PageKind = Literal["content", "cover", "blank", "duplicate"]
 
 SPREAD_MIN_RATIO = 1.3  # A3/A4 ngang ~ 1.41; Letter ngang 1.29 (măng sét) không cắt
 WORK_WIDTH = 600  # px, ảnh thu nhỏ để tính toán
@@ -22,6 +22,7 @@ COVER_MAX_INK = 0.035
 DESKEW_MAX_DEG = 3.0
 DESKEW_STEP_DEG = 0.25
 DESKEW_MIN_DEG = 0.3
+DUP_MAX_DIFF = 6.0  # chênh lệch xám trung bình (0-255) giữa 2 ảnh thu nhỏ -> coi là trang trùng (scan 2 lần)
 
 
 @dataclass
@@ -94,6 +95,49 @@ def page_kind(text: str | None, img: Image.Image | None, *, spread_half: bool = 
     return "content"
 
 
+def trim_margins(img: Image.Image, pad: float = 0.02) -> Image.Image:
+    """Cắt lề trắng quanh vùng có mực (giữ đệm `pad`) để giảm số token ảnh gửi model."""
+    a = _gray_small(img)
+    mask = a < INK_LEVEL
+    rows, cols = np.flatnonzero(mask.any(axis=1)), np.flatnonzero(mask.any(axis=0))
+    if not len(rows) or not len(cols):
+        return img
+    sx, sy = img.width / a.shape[1], img.height / a.shape[0]
+    px, py = int(img.width * pad), int(img.height * pad)
+    box = (
+        max(0, int(cols[0] * sx) - px),
+        max(0, int(rows[0] * sy) - py),
+        min(img.width, int((cols[-1] + 1) * sx) + px),
+        min(img.height, int((rows[-1] + 1) * sy) + py),
+    )
+    if (box[2] - box[0]) * (box[3] - box[1]) > 0.95 * img.width * img.height:
+        return img
+    return img.crop(box)
+
+
+def _thumb(img: Image.Image) -> np.ndarray:
+    return np.asarray(img.convert("L").resize((48, 64), Image.Resampling.BILINEAR), dtype=np.float32)
+
+
+def mark_duplicates(items: list[LogicalPage]) -> None:
+    """Trang nội dung trùng trang trước (cùng lớp chữ hoặc ảnh gần như giống hệt) -> 'duplicate'."""
+    kept: list[tuple[str | None, np.ndarray | None]] = []
+    for p in items:
+        if p.kind != "content":
+            continue
+        text = " ".join(p.text.split()) if p.text and text_layer_ok(p.text) else None
+        thumb = _thumb(p.image) if p.image is not None and text is None else None
+        dup = any(
+            (text is not None and text == t)
+            or (thumb is not None and th is not None and float(np.abs(thumb - th).mean()) < DUP_MAX_DIFF)
+            for t, th in kept
+        )
+        if dup:
+            p.kind = "duplicate"
+        else:
+            kept.append((text, thumb))
+
+
 def estimate_skew(img: Image.Image) -> float:
     """Góc nghiêng (độ) theo phương pháp projection profile: góc làm phương sai tổng hàng lớn nhất."""
     a = _gray_small(img)
@@ -132,7 +176,8 @@ def preprocess(raw_pages: list[RawPage], *, do_deskew: bool = True) -> Preproces
                 continue
         items.append(LogicalPage(0, str(rp.index), rp.text if rp.text.strip() else None, img))
 
-    halves = {id(p) for sheet in sheets for p in sheet}
+    # Bìa chỉ nằm ở tờ A3 đầu (tờ ngoài của sổ gấp); trang ký ngắn ở tờ sau cũng ít mực như bìa
+    halves = {id(p) for p in sheets[0]} if sheets else set()
     for p in items:
         p.kind = page_kind(p.text, p.image, spread_half=id(p) in halves)
 
@@ -146,6 +191,7 @@ def preprocess(raw_pages: list[RawPage], *, do_deskew: bool = True) -> Preproces
             reordered = booklet != items
             items = booklet
 
+    mark_duplicates(items)
     content = [p for p in items if p.kind == "content"]
     dropped = [p for p in items if p.kind != "content"]
     for i, p in enumerate(content, start=1):

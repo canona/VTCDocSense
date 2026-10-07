@@ -1,0 +1,237 @@
+{
+ "data": {
+  "loai_van_ban": "GP_HOAT_DONG_LUAT_2016",
+  "ten_loai_giay_phep": "Giấy phép hoạt động báo in và báo điện tử",
+  "so_gp": {
+   "value": null,
+   "confidence": "high",
+   "note": "chưa điền số",
+   "source_page": 1
+  },
+  "ngay_cap": {
+   "value": null,
+   "confidence": "high",
+   "note": "chưa điền ngày tháng",
+   "source_page": 1
+  },
+  "co_quan_cap": {
+   "value": "BỘ THÔNG TIN VÀ TRUYỀN THÔNG",
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "nguoi_ky": {
+   "value": "Phạm Anh Tuấn",
+   "confidence": "high",
+   "note": null,
+   "source_page": 3
+  },
+  "chuc_vu_nguoi_ky": {
+   "value": "KT. BỘ TRƯỞNG - THỨ TRƯỞNG",
+   "confidence": "high",
+   "note": null,
+   "source_page": 3
+  },
+  "can_cu_gp_goc": {
+   "value": null,
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "van_ban_de_nghi": {
+   "value": "văn bản số 154-CV/TU ngày 01 tháng 6 năm 2021 và văn bản số 206-CV/TU ngày 04 tháng 8 năm 2021 của Tỉnh ủy Bình Thuận về việc đề nghị cấp lại giấy phép hoạt động Báo Bình Thuận (in và điện tử)",
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "co_quan_chu_quan": {
+   "ten": {
+    "value": "TỈNH ỦY BÌNH THUẬN",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "dia_chi": {
+    "value": "Số 04 Bà Triệu, thành phố Phan Thiết, tỉnh Bình Thuận",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "dien_thoai": {
+    "value": "0252.3821753",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "fax": {
+    "value": "0252.3821153",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   }
+  },
+  "co_quan_bao_chi": {
+   "ten": {
+    "value": "BÁO BÌNH THUẬN",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "loai_hinh_dien_tu": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "ten_chuyen_trang": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   }
+  },
+  "ton_chi_muc_dich": {
+   "value": "- Tuyên truyền đường lối, chủ trương của Đảng, chính sách, pháp luật của Nhà nước; Chỉ thị, Nghị quyết của cấp ủy Đảng, chính quyền và nhiệm vụ chính trị, kinh tế, xã hội của địa phương; / - Phản ánh tâm tư, nguyện vọng của quần chúng nhân dân đối với Đảng và Nhà nước. Cổ vũ tinh thần thi đua yêu nước, động viên quần chúng nhân dân tích cực tham gia thực hiện các nhiệm vụ phát triển kinh tế - xã hội vì sự nghiệp xây dựng bảo vệ Tổ quốc Việt Nam xã hội chủ nghĩa. / - Biểu dương các điển hình tiên tiến, nhân tố mới; phê bình, đấu tranh với các biểu hiện và hành vi tiêu cực trong xã hội. / - Quảng bá hình ảnh Bình Thuận đến với bạn bè trong nước và quốc tế.",
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "doi_tuong_phuc_vu": {
+   "value": "Cán bộ, đảng viên, nhân dân trong tỉnh và bạn đọc quan tâm.",
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "pham_vi_phat_hanh": {
+   "value": null,
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "phuong_thuc_phat_hanh": {
+   "value": null,
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "tru_so": {
+   "dia_chi": {
+    "value": "Số 335 Võ Văn Kiệt, thành phố Phan Thiết, tỉnh Bình Thuận",
+    "confidence": "high",
+    "note": null,
+    "source_page": 2
+   },
+   "dien_thoai": {
+    "value": "0252.3822830",
+    "confidence": "high",
+    "note": null,
+    "source_page": 2
+   },
+   "fax": {
+    "value": "0252.3822817",
+    "confidence": "high",
+    "note": null,
+    "source_page": 2
+   },
+   "email": {
+    "value": "baobinhthuan@gmail.com",
+    "confidence": "high",
+    "note": null,
+    "source_page": 2
+   },
+   "website": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": 2
+   }
+  },
+  "hieu_luc": {
+   "value": "Giấy phép này có hiệu lực kể từ ngày ký",
+   "confidence": "high",
+   "note": null,
+   "source_page": 3
+  },
+  "gp_duoc_thay_the": [
+   {
+    "so_gp": "894/GP-BTTTT",
+    "ngay": "13/06/2011"
+   },
+   {
+    "so_gp": "201/GP-BTTTT",
+    "ngay": "29/05/2015"
+   }
+  ],
+  "an_pham": [
+   {
+    "loai_hinh": "BAO_IN",
+    "cap": "Ấn phẩm chính",
+    "ten_goi": "Báo Bình Thuận",
+    "ngon_ngu": "Tiếng Việt",
+    "ky_han": "04 kỳ/tuần",
+    "thoi_gian_phat_hanh": "Từ thứ Hai đến thứ Năm hằng tuần",
+    "khuon_kho": "30cm x 42cm",
+    "so_trang": "12 trang",
+    "so_luong": null,
+    "noi_in": null,
+    "ten_mien": null,
+    "isp": null
+   },
+   {
+    "loai_hinh": "BAO_IN",
+    "cap": "Ấn phẩm khác",
+    "ten_goi": "Bình Thuận Cuối tuần",
+    "ngon_ngu": "Tiếng Việt",
+    "ky_han": "01 kỳ/tuần",
+    "thoi_gian_phat_hanh": "Thứ Sáu hằng tuần",
+    "khuon_kho": "30cm x 42cm",
+    "so_trang": "16 trang",
+    "so_luong": null,
+    "noi_in": null,
+    "ten_mien": null,
+    "isp": null
+   },
+   {
+    "loai_hinh": "BAO_DIEN_TU",
+    "cap": null,
+    "ten_goi": "Báo Bình Thuận Online",
+    "ngon_ngu": "Tiếng Việt và tiếng Anh",
+    "ky_han": null,
+    "thoi_gian_phat_hanh": null,
+    "khuon_kho": null,
+    "so_trang": null,
+    "so_luong": null,
+    "noi_in": null,
+    "ten_mien": "baobinhthuan.com.vn",
+    "isp": "VNPT Bình Thuận"
+   }
+  ],
+  "lanh_dao": [
+   {
+    "chuc_vu": "TONG_BIEN_TAP",
+    "ho_ten": "Lê Huy Toàn"
+   },
+   {
+    "chuc_vu": "PHO_TONG_BIEN_TAP",
+    "ho_ten": "Đặng Sỹ Dũng"
+   },
+   {
+    "chuc_vu": "PHO_TONG_BIEN_TAP",
+    "ho_ten": "Huỳnh Thanh"
+   },
+   {
+    "chuc_vu": "PHO_TONG_BIEN_TAP",
+    "ho_ten": "Bùi Thanh Quang"
+   }
+  ]
+ },
+ "provider": "gemini",
+ "model": "gemini-3.5-flash",
+ "input_tokens": 4283,
+ "output_tokens": 2358,
+ "cached_input_tokens": 0,
+ "duration_ms": 10176,
+ "request_digest": "aaf0479e51109fa4df184a2d5e3e733d6021d94c82b9341504a76928ae4bd479",
+ "label": "BÁO BÌNH THUẬN/GP Báo Bình Thuận (in, điện tử) 2021_1.pdf",
+ "recorded_at": "2026-10-07"
+}

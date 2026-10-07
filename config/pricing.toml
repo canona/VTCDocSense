@@ -1,0 +1,17 @@
+# Đơn giá token (USD / 1 triệu token). TỰ ĐIỀN theo bảng giá hiện hành của nhà cung cấp;
+# repo không ghi sẵn giá để tránh số liệu sai/lỗi thời.
+#
+# - Khóa model: khớp chính xác tên model trả về, hoặc tiền tố dài nhất (vd "gemini-2.5-flash" khớp
+#   "gemini-2.5-flash-preview-xx").
+# - [default]: áp cho model không có trong bảng. BẮT BUỘC nếu dùng danh sách model ("a,b") hoặc "auto".
+# - Gọi API thật mà model chưa có đơn giá -> bị từ chối (không kiểm soát được ngân sách).
+# - cached_input: giá phần input trúng prompt cache (mặc định = input).
+# - batch_discount: hệ số khi dùng Batch API (vd 0.5), dự phòng cho USE_BATCH_API.
+#
+# Ví dụ (giá trị minh họa, KHÔNG phải giá thật):
+# [models."ten-model-flash"]
+# input = 0.0
+# output = 0.0
+# cached_input = 0.0
+
+[models]

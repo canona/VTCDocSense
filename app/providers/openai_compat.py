@@ -106,7 +106,9 @@ class OpenAICompatProvider(ExtractionProvider):
         *,
         name: str | None = None,
         model_filter: str | None = None,
+        reasoning_effort: str | None = None,
     ) -> None:
+        self.reasoning_effort = reasoning_effort
         if name:
             self.name = name
         self.models = parse_models(model) or [AUTO]
@@ -205,13 +207,19 @@ class OpenAICompatProvider(ExtractionProvider):
             }
         else:
             rf = {"type": "json_object"}
-        return {
+        body: dict[str, Any] = {
             "model": model,
             "messages": self._build_messages(req, fmt),
             "temperature": 0,
             "stream": False,  # 9router mặc định trả SSE nếu không ghi rõ
             "response_format": rf,
         }
+        if req.max_tokens:
+            body["max_tokens"] = req.max_tokens
+        if self.reasoning_effort:
+            # Model có "thinking": token suy nghĩ tính vào max_tokens và bị tính phí -> giữ ở mức thấp
+            body["reasoning_effort"] = self.reasoning_effort
+        return body
 
     async def _post(self, body: dict[str, Any]) -> httpx.Response:
         try:
@@ -233,7 +241,7 @@ class OpenAICompatProvider(ExtractionProvider):
         return resp
 
     async def extract(self, req: ExtractionRequest) -> ExtractionResult:
-        models = await self.candidate_models()
+        models = parse_models(req.model) if req.model else await self.candidate_models()
         start = time.perf_counter()
         last_error = "không có model khả dụng"
         filtered = False  # có model chặn nội dung (vd Gemini RECITATION)
@@ -293,14 +301,19 @@ class OpenAICompatProvider(ExtractionProvider):
         try:
             data = json.loads(_strip_fence(raw))
         except json.JSONDecodeError as e:
-            raise ProviderError(f"invalid JSON from model {self.model}: {e}") from e
+            reason = _finish_reason(payload)
+            raise ProviderError(
+                f"invalid JSON from model {self.model} (finish_reason={reason}): {e}", billed=True
+            ) from e
         usage = payload.get("usage") or {}
+        cached = (usage.get("prompt_tokens_details") or {}).get("cached_tokens") or 0
         return ExtractionResult(
             data=data,
             provider=self.name,
             model=self.model,
             input_tokens=usage.get("prompt_tokens", 0),
             output_tokens=usage.get("completion_tokens", 0),
+            cached_input_tokens=cached,
             duration_ms=int((time.perf_counter() - start) * 1000),
             raw_text=raw,
         )

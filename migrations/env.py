@@ -4,6 +4,7 @@ from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import get_settings
+from app.db import models  # noqa: F401  (nạp bảng vào metadata)
 from app.db.session import Base
 
 target_metadata = Base.metadata

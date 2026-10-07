@@ -1,0 +1,188 @@
+{
+ "data": {
+  "loai_van_ban": "GP_HOAT_DONG_LUAT_1989",
+  "ten_loai_giay_phep": "GIẤY PHÉP HOẠT ĐỘNG BÁO CHÍ IN",
+  "so_gp": {
+   "value": "894/GP-BTTTT",
+   "confidence": "medium",
+   "note": "Số viết tay",
+   "source_page": 1
+  },
+  "ngay_cap": {
+   "value": "13/06/2011",
+   "confidence": "medium",
+   "note": "Ngày tháng viết tay",
+   "source_page": 1
+  },
+  "co_quan_cap": {
+   "value": "BỘ THÔNG TIN VÀ TRUYỀN THÔNG",
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "nguoi_ky": {
+   "value": "Đỗ Quý Doãn",
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "chuc_vu_nguoi_ky": {
+   "value": "KT. BỘ TRƯỞNG / THỨ TRƯỞNG",
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "can_cu_gp_goc": {
+   "value": null,
+   "confidence": "high",
+   "note": null,
+   "source_page": null
+  },
+  "van_ban_de_nghi": {
+   "value": "văn bản đề nghị số 382/STTTT-BCXB ngày 23 tháng 5 năm 2011 của Sở Thông tin và Truyền thông tỉnh Bình Thuận; văn bản số 191-CV/TU ngày 19 tháng 5 năm 2011 của Tỉnh uỷ Bình Thuận.",
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "co_quan_chu_quan": {
+   "ten": {
+    "value": "Tỉnh uỷ Bình Thuận.",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "dia_chi": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": null
+   },
+   "dien_thoai": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": null
+   },
+   "fax": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": null
+   }
+  },
+  "co_quan_bao_chi": {
+   "ten": {
+    "value": "BÁO BÌNH THUẬN",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1
+   },
+   "loai_hinh_dien_tu": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": null
+   },
+   "ten_chuyen_trang": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": null
+   }
+  },
+  "ton_chi_muc_dich": {
+   "value": "- Tuyên truyền, phổ biến chủ trương, đường lối của Đảng, chính sách, pháp luật của Nhà nước; các nhiệm vụ kinh tế, xã hội của địa phương. / - Phản ánh tâm tư, nguyện vọng của quần chúng nhân dân đối với Đảng, Nhà nước. / - Phê bình, đấu tranh với các hiện tượng tiêu cực; cổ vũ tinh thần thi đua yêu nước và động viên quần chúng nhân dân tích cực tham gia thực hiện các nhiệm vụ kinh tế, xã hội vì sự nghiệp xây dựng và bảo vệ Tổ quốc Việt Nam xã hội chủ nghĩa.",
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "doi_tuong_phuc_vu": {
+   "value": "Cán bộ, đảng viên và nhân dân tỉnh Bình Thuận.",
+   "confidence": "high",
+   "note": null,
+   "source_page": 1
+  },
+  "pham_vi_phat_hanh": {
+   "value": "Trong nước.",
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "phuong_thuc_phat_hanh": {
+   "value": "Qua Bưu điện và tự phát hành.",
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "tru_so": {
+   "dia_chi": {
+    "value": "Đường Từ Văn Tư nối dài, TP. Phan Thiết, tỉnh Bình Thuận.",
+    "confidence": "high",
+    "note": null,
+    "source_page": 2
+   },
+   "dien_thoai": {
+    "value": "(062). 3822816",
+    "confidence": "high",
+    "note": null,
+    "source_page": 2
+   },
+   "fax": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": null
+   },
+   "email": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": null
+   },
+   "website": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": null
+   }
+  },
+  "hieu_luc": {
+   "value": "Giấy phép hoạt động báo chí có hiệu lực trong mười (10) năm kể từ ngày ký giấy phép.",
+   "confidence": "high",
+   "note": null,
+   "source_page": 2
+  },
+  "gp_duoc_thay_the": [],
+  "an_pham": [
+   {
+    "loai_hinh": "BAO_IN",
+    "cap": "Ấn phẩm chính",
+    "ten_goi": "Báo Bình Thuận",
+    "ngon_ngu": "Tiếng Việt",
+    "ky_han": "Thứ hai, thứ 4, thứ 5 và thứ 6",
+    "thoi_gian_phat_hanh": null,
+    "khuon_kho": "28cm x 42cm",
+    "so_trang": "Số phát hành thứ 2, thứ 4 và thứ 5: 12 trang / Số phát hành thứ 6: 16 trang",
+    "so_luong": "6.000 bản/kỳ",
+    "noi_in": "Bình Thuận.",
+    "ten_mien": null,
+    "isp": null
+   }
+  ],
+  "lanh_dao": [
+   {
+    "chuc_vu": "TONG_BIEN_TAP",
+    "ho_ten": "Lê Hồng Văn"
+   }
+  ]
+ },
+ "provider": "gemini",
+ "model": "gemini-3.5-flash",
+ "input_tokens": 3688,
+ "output_tokens": 1779,
+ "cached_input_tokens": 0,
+ "duration_ms": 9194,
+ "request_digest": "bcf88a08e0f100295578aacb0ea2abcda288e9ed61b59afeca3f211f964b8383",
+ "label": "BÁO BÌNH THUẬN/GP Báo Bình Thuận2011_1.pdf",
+ "recorded_at": "2026-10-07"
+}

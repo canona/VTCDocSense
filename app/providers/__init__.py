@@ -14,6 +14,7 @@ __all__ = [
     "PageInput",
     "ProviderError",
     "build_provider",
+    "build_providers",
 ]
 
 
@@ -22,7 +23,25 @@ def build_provider(settings: Settings, name: ProviderName | None = None) -> Extr
     if name == "mock":
         from app.providers.mock import MockProvider
 
-        return MockProvider()
+        return MockProvider(fixtures_dir=settings.llm_fixtures_dir)
+    if name in ("gemini", "openai"):
+        from app.providers.openai_compat import OpenAICompatProvider
+
+        api_key = settings.gemini_api_key if name == "gemini" else settings.openai_api_key
+        model = settings.gemini_model if name == "gemini" else settings.openai_model
+        model = model or settings.model_vision or settings.model_text
+        if not api_key or not model:
+            env = name.upper()
+            raise ValueError(f"{name} cần {env}_API_KEY và {env}_MODEL (hoặc MODEL_TEXT/MODEL_VISION)")
+        return OpenAICompatProvider(
+            settings.gemini_base_url if name == "gemini" else settings.openai_base_url,
+            model,
+            api_key=api_key.get_secret_value(),
+            timeout_s=settings.provider_timeout_s,
+            response_format=settings.openai_compat_response_format,
+            name=name,
+            reasoning_effort=settings.llm_reasoning_effort or ("low" if name == "gemini" else None),
+        )
     if name == "vllm":
         from app.providers.openai_compat import VLLMProvider
 
@@ -69,3 +88,16 @@ def build_provider(settings: Settings, name: ProviderName | None = None) -> Extr
             timeout_s=settings.provider_timeout_s,
         )
     raise ValueError(f"Provider không hỗ trợ: {name}")
+
+
+def build_providers(
+    settings: Settings, name: ProviderName | None = None
+) -> tuple[ExtractionProvider, ExtractionProvider | None]:
+    """Provider chính + provider phụ (nếu FALLBACK_ENABLED)."""
+    primary = build_provider(settings, name)
+    fallback = (
+        build_provider(settings, settings.fallback_provider)
+        if settings.fallback_enabled and settings.fallback_provider
+        else None
+    )
+    return primary, fallback
