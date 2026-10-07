@@ -1,0 +1,14 @@
+<fieldset>
+  <legend>Lịch sử sửa trường</legend>
+  {% if reviews %}
+  <table class="mini">
+    <tr><th>Thời điểm</th><th>Người sửa</th><th>Trường</th><th>Giá trị cũ</th><th>Giá trị mới</th></tr>
+    {% for r in reviews %}
+    <tr><td class="muted">{{ r.created_at|dt }}</td><td>{{ r.user_email }}</td><td>{{ FIELD_LABELS.get(r.field_path, r.field_path) }}</td>
+      <td>{{ r.old_value.value if r.old_value is mapping and 'value' in r.old_value else r.old_value }}{% if r.old_value is mapping and r.old_value.confidence %} <span class="muted">({{ CONF_LABEL.get(r.old_value.confidence) }})</span>{% endif %}</td>
+      <td>{{ r.new_value.value if r.new_value is mapping and 'value' in r.new_value else r.new_value }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="muted">Chưa có lượt sửa nào.</p>{% endif %}
+  <p class="muted">Phiên bản trích xuất: {% for v in versions %}v{{ v.version }} ({{ v.created_by or 'pipeline' }}, {{ v.created_at|dt }}){{ ', ' if not loop.last }}{% endfor %}</p>
+</fieldset>

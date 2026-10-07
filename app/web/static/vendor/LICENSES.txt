@@ -1,0 +1,2 @@
+htmx 2.0.4 (BSD Zero Clause, https://htmx.org) và Alpine.js 3.14.8 (MIT, https://alpinejs.dev).
+Copy nguyên bản để không phụ thuộc CDN khi chạy nội bộ.

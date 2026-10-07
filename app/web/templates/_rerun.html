@@ -1,0 +1,19 @@
+<div class="modal-bg" x-data @click.self="$el.remove()" @keydown.escape.window="$el.remove()">
+  <div class="modal">
+    <h2 style="margin-top:0">Chạy lại trích xuất?</h2>
+    <p>{{ doc.file_name }} · {{ doc.pages or '?' }} trang · {{ {'TEXT': 'có lớp chữ', 'SCAN': 'scan', 'MIXED': 'hỗn hợp'}.get(doc.pdf_type, '?') }}</p>
+    <p>Ước tính: {{ est.calls }} lượt gọi (tối đa {{ est.max_calls }}) · ~{{ est.input_tokens|num }} + {{ est.output_tokens|num }} token ·
+      chi phí {% if est.cost_vnd is not none %}<strong>{{ est.cost_vnd|vnd }}</strong> (tối đa {{ est.max_cost_vnd|vnd }}){% else %}<em>chưa có đơn giá</em>{% endif %}</p>
+    <p class="muted">Mặc định dùng lại cache (cùng file + prompt + model → không tốn phí, kết quả như cũ).
+      Chọn “bỏ qua cache” khi đã đổi model/prompt hoặc muốn model đọc lại.</p>
+    {% if not settings.allow_live_llm %}<p class="warnbox">ALLOW_LIVE_LLM=false: chỉ chạy mock/cache.</p>{% endif %}
+    <form method="post" action="/documents/{{ doc.id }}/rerun">
+      <input type="hidden" name="confirm" value="1">
+      <label><input type="checkbox" name="bypass_cache" value="1"> Bỏ qua cache (gọi API thật, tốn phí)</label>
+      <p style="display:flex;gap:8px;margin-bottom:0">
+        <button class="primary" type="submit">Xác nhận chạy lại</button>
+        <button type="button" @click="$root.remove()">Hủy</button>
+      </p>
+    </form>
+  </div>
+</div>

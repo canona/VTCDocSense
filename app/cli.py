@@ -78,8 +78,8 @@ async def _extract(
     print(
         f"LLM: {len(live)} lượt gọi thật, {hits} cache hit, "
         f"{sum(r.input_tokens for r in live)}+{sum(r.output_tokens for r in live)} token, "
-        f"~${run.cost_usd:.4f} | hôm nay ${Ledger(settings.ledger_dir).spent():.4f}"
-        f"/{settings.llm_daily_budget_usd}"
+        f"~{run.cost_vnd:,.1f} đ | hôm nay {Ledger(settings.ledger_dir).spent():,.1f}"
+        f"/{settings.llm_daily_budget_vnd:,.0f} đ"
     )
     return 1 if failed else 0
 
@@ -103,11 +103,11 @@ def _cost() -> int:
         agg[0] += 1
         agg[1] += e.input_tokens
         agg[2] += e.output_tokens
-        agg[3] += e.cost_usd
+        agg[3] += e.cost_vnd
     for model, (n, i, o, c) in by_model.items():
-        print(f"{model}: {int(n)} lượt, {int(i)}+{int(o)} token, ${c:.4f}")
-    total = sum(e.cost_usd for e in entries)
-    print(f"Tổng hôm nay: ${total:.4f} / ngân sách ${settings.llm_daily_budget_usd}")
+        print(f"{model}: {int(n)} lượt, {int(i)}+{int(o)} token, {c:,.1f} đ")
+    total = sum(e.cost_vnd for e in entries)
+    print(f"Tổng hôm nay: {total:,.1f} đ / ngân sách {settings.llm_daily_budget_vnd:,.0f} đ")
     return 0
 
 

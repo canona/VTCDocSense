@@ -64,7 +64,7 @@ async def test_cache_hit_avoids_second_call_and_cost_logged(tmp_path: Path) -> N
     await p.extract(_req())
     assert len(inner.calls) == 1
     assert [r.cache_hit for r in run.records] == [False, True]
-    assert run.cost_usd == pytest.approx((1000 * 1.0 + 500 * 2.0) / 1e6)
+    assert run.cost_vnd == pytest.approx((1000 * 1.0 + 500 * 2.0) / 1e6)
     assert Ledger(s.ledger_dir).spent() == pytest.approx(0.002)
     # Cache hit vẫn dùng được khi đã tắt cờ live
     p2 = MeteredProvider(inner, s.model_copy(update={"allow_live_llm": False}))
@@ -80,11 +80,11 @@ async def test_max_calls_per_run(tmp_path: Path) -> None:
 
 
 async def test_daily_budget(tmp_path: Path) -> None:
-    s = _settings(tmp_path, llm_daily_budget_usd=0.003)
+    s = _settings(tmp_path, llm_daily_budget_vnd=0.003)
     p = MeteredProvider(FakeLive(), s)
     await p.extract(_req("a"))
     await p.extract(_req("b"))  # đã dùng 0.002 < 0.003 -> vẫn gọi
-    with pytest.raises(LiveCallBlocked, match="LLM_DAILY_BUDGET_USD"):
+    with pytest.raises(LiveCallBlocked, match="LLM_DAILY_BUDGET_VND"):
         await p.extract(_req("c"))
 
 
@@ -97,7 +97,7 @@ async def test_unknown_price_blocked(tmp_path: Path) -> None:
     # Không bắt buộc đơn giá: vẫn gọi, chi phí 0
     run = RunState()
     await MeteredProvider(inner, _settings(tmp_path), run=run).extract(_req())
-    assert len(inner.calls) == 1 and run.cost_usd == 0
+    assert len(inner.calls) == 1 and run.cost_vnd == 0
 
 
 def test_pricing_prefix_default_and_cache_rate(tmp_path: Path) -> None:
@@ -130,3 +130,27 @@ def test_digest_uses_image_id_not_bytes() -> None:
     b = a.model_copy(deep=True)
     b.pages[0].image = b"jpeg-2"  # Pillow khác phiên bản -> bytes khác
     assert request_digest(a) == request_digest(b)
+
+
+def test_pricing_vnd_default_usd_conversion_provider_key_and_min_request(tmp_path: Path) -> None:
+    f = tmp_path / "p.toml"
+    body = """
+[models."router/gem"]
+input = 400
+output = 1600
+min_per_request = 3
+
+[models."gem"]
+currency = "USD"
+input = 1
+output = 2
+"""
+    f.write_text(body, encoding="utf-8")
+    pr = Pricing.load(f)
+    assert pr.get("gem", "gemini") is None  # giá USD thiếu vnd_per_usd -> bỏ qua
+    # giá đồng (mặc định): 1M in + 1M out = 2000 đ; request nhỏ -> tối thiểu 3 đ
+    assert pr.cost("gem", 1_000_000, 1_000_000, provider="router") == pytest.approx(2000)
+    assert pr.cost("gem", 10, 10, provider="router") == pytest.approx(3)
+    f.write_text("vnd_per_usd = 25000" + body, encoding="utf-8")
+    pr = Pricing.load(f)
+    assert pr.cost("gem", 1_000_000, 1_000_000, provider="gemini") == pytest.approx(3 * 25000)

@@ -327,3 +327,20 @@ async def test_plain_text_reply_switches_to_json_object() -> None:
     p = _provider_with(httpx.MockTransport(handler))
     assert (await p.extract(_req())).data == {"a": 3}
     assert [b["response_format"]["type"] for b in bodies] == ["json_schema", "json_object"]  # type: ignore[index]
+
+
+async def test_openai_compat_drops_reasoning_effort_on_400() -> None:
+    bodies: list[dict[str, object]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        bodies.append(body)
+        if "reasoning_effort" in body:
+            return httpx.Response(400, text="Unknown parameter: reasoning_effort")
+        return httpx.Response(200, json={"choices": [{"message": {"content": '{"a": 1}'}}], "usage": {}})
+
+    p = _provider_with(httpx.MockTransport(handler))
+    p.reasoning_effort = "low"
+    assert (await p.extract(_req())).data == {"a": 1}
+    assert [("reasoning_effort" in b) for b in bodies] == [True, False]
+    assert bodies[1]["response_format"]["type"] == "json_schema"  # type: ignore[index]  # không hạ cấp nhầm

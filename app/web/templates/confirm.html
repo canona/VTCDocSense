@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Xác nhận chạy{% endblock %}
+{% block content %}
+<div class="up-head">
+  <h1>Xác nhận chạy lô “{{ batch.name or batch.id }}”</h1>
+  <ol class="steps">
+    <li><span>✓</span>Chọn file</li>
+    <li class="on"><span>2</span>Xem ước tính chi phí</li>
+    <li class="{{ 'on' if pending }}"><span>3</span>Xác nhận chạy</li>
+  </ol>
+</div>
+<div class="panel" style="max-width:760px">
+  {% if pending %}
+  <p><strong>{{ est.documents }}</strong> document chờ chạy · {{ est.text_pages }} trang có lớp chữ · {{ est.scan_pages }} trang scan</p>
+  <p>Ước tính: <strong>{{ est.calls }}</strong> lượt gọi (tối đa {{ est.max_calls }} nếu phải escalate) ·
+     ~{{ est.input_tokens|num }} token vào · ~{{ est.output_tokens|num }} token ra ·
+     chi phí {% if est.cost_vnd is not none %}<strong>{{ est.cost_vnd|vnd }}</strong> (tối đa {{ est.max_cost_vnd|vnd }}){% else %}<em>chưa tính được (chưa có đơn giá trong config/pricing.toml)</em>{% endif %}</p>
+  <p class="muted">Phản hồi đã có trong cache (cùng file, cùng prompt) không bị tính lại.
+    Model: chữ <code>{{ settings.model_text or 'mặc định' }}</code> · scan <code>{{ settings.model_vision or 'mặc định' }}</code>.</p>
+  {% if not settings.allow_live_llm %}<p class="warnbox">ALLOW_LIVE_LLM=false: worker chỉ dùng mock/cache, không gọi API thật.</p>{% endif %}
+  <form method="post" action="/batches/{{ batch.id }}/start" onsubmit="return confirm('Chạy {{ est.documents }} document? Có thể phát sinh chi phí API.')">
+    <button class="primary" type="submit">Xác nhận chạy</button>
+    <a class="btn" href="/documents?batch_id={{ batch.id }}">Để sau</a>
+  </form>
+  {% else %}
+  <p>Không còn document nào chờ chạy trong lô này. <a href="/documents?batch_id={{ batch.id }}">Xem danh sách</a></p>
+  {% endif %}
+</div>
+<h2>File trong lô</h2>
+<table>
+  <tr><th>Thư mục</th><th>File</th><th>Số trang</th><th>Kiểu</th><th>Trạng thái</th></tr>
+  {% for d in docs %}
+  <tr><td>{{ d.folder_name or '' }}</td><td>{{ d.file_name }}</td><td>{{ d.pages or '?' }}</td>
+      <td>{{ {'TEXT': 'Có lớp chữ', 'SCAN': 'Scan', 'MIXED': 'Hỗn hợp'}.get(d.pdf_type, 'PDF lỗi') }}</td>
+      <td><span class="badge st-{{ d.status }}">{{ d.status|status_label }}</span></td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

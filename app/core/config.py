@@ -28,6 +28,25 @@ class Settings(BaseSettings):
     # có token -> bắt buộc "Authorization: Bearer <token>"; không có token -> chỉ mở khi APP_ENV=local
     internal_api_token: SecretStr | None = None
 
+    # ----- Đăng nhập giao diện web -----
+    # cf_access: xác minh JWT header Cf-Access-Jwt-Assertion (production);
+    # dev: đăng nhập bằng email tự nhập (chỉ local, bị chặn khi APP_ENV=production)
+    auth_mode: Literal["cf_access", "dev"] = "cf_access"
+    cf_access_team_domain: str | None = None  # vd <team>.cloudflareaccess.com
+    cf_access_aud: str | None = None  # Application Audience (AUD) tag
+    bootstrap_admin_emails: str = ""  # "a@x.com,b@y.com": tự là admin khi đăng nhập
+    api_key_pepper: SecretStr | None = None  # trộn vào hash API key (M4)
+
+    # ----- API đối tác /v1 (M4) -----
+    partner_docs: bool = True  # /v1/docs + /v1/openapi.json (chỉ route đối tác), độc lập ENABLE_DOCS
+    api_rate_limit_per_minute: int = Field(default=60, ge=1)  # mặc định/key; tenant ghi đè được
+    api_max_files_per_request: int = Field(default=20, ge=1)
+    idempotency_ttl_hours: int = Field(default=24, ge=1)
+    webhook_timeout_s: float = 10.0
+    webhook_max_attempts: int = Field(default=8, ge=1)
+    # true: cho webhook tới http:// và địa chỉ nội bộ (localhost/10.x/...). Chỉ bật khi dev/test (SSRF)
+    webhook_allow_private: bool = False
+
     # Pipeline
     render_dpi: int = 150
     image_grayscale: bool = True
@@ -38,7 +57,7 @@ class Settings(BaseSettings):
     # ----- Kỷ luật token -----
     # Gọi API LLM thật (tốn tiền) chỉ khi bật cờ này (hoặc CLI --live); cache hit vẫn dùng được khi tắt
     allow_live_llm: bool = False
-    llm_daily_budget_usd: float = Field(default=2.0, ge=0)
+    llm_daily_budget_vnd: float = Field(default=50_000, ge=0)  # đồng/ngày
     llm_max_calls_per_run: int = Field(default=10, ge=0)  # 1 run = 1 lệnh CLI hoặc 1 document trong worker
     llm_cache_enabled: bool = True
     llm_cache_dir: Path | None = None  # mặc định <DATA_DIR>/llm_cache
@@ -52,7 +71,8 @@ class Settings(BaseSettings):
     model_text: str | None = None
     model_vision: str | None = None
     max_output_tokens: int = 8192
-    # Mức "thinking" (none/minimal/low/medium/high); trống: gemini dùng "low", provider khác không gửi
+    # Mức "thinking" (none/minimal/low/medium/high); trống: gemini dùng "low", provider khác không gửi.
+    # Endpoint trả 400 vì tham số này -> tự gửi lại không kèm
     llm_reasoning_effort: str | None = None
     classify_max_tokens: int = 300
     use_batch_api: bool = False  # dự phòng, chưa triển khai (xem README)
@@ -100,6 +120,9 @@ class Settings(BaseSettings):
     @field_validator(
         "fallback_provider",
         "internal_api_token",
+        "cf_access_team_domain",
+        "cf_access_aud",
+        "api_key_pepper",
         "llm_cache_dir",
         "llm_ledger_dir",
         "model_text",
@@ -123,6 +146,10 @@ class Settings(BaseSettings):
     def _empty_as_none(cls, v: object) -> object:
         # Compose/Coolify truyền biến chưa đặt dưới dạng chuỗi rỗng
         return None if v == "" else v
+
+    @property
+    def admin_emails(self) -> set[str]:
+        return {e.strip().lower() for e in self.bootstrap_admin_emails.split(",") if e.strip()}
 
     @property
     def cache_dir(self) -> Path:

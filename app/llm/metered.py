@@ -31,7 +31,7 @@ class CallRecord:
     input_tokens: int = 0
     output_tokens: int = 0
     cached_input_tokens: int = 0
-    cost_usd: float = 0.0
+    cost_vnd: float = 0.0
     cache_hit: bool = False
     live: bool = False
     duration_ms: int = 0
@@ -44,8 +44,8 @@ class RunState:
     records: list[CallRecord] = field(default_factory=list)
 
     @property
-    def cost_usd(self) -> float:
-        return sum(r.cost_usd for r in self.records)
+    def cost_vnd(self) -> float:
+        return sum(r.cost_vnd for r in self.records)
 
 
 def is_live(provider: ExtractionProvider) -> bool:
@@ -67,7 +67,9 @@ class MeteredProvider(ExtractionProvider):
         run: RunState | None = None,
         record: bool = False,
         record_label: str | None = None,
+        read_cache: bool = True,
     ) -> None:
+        self.read_cache = read_cache  # False: "chạy lại" bỏ qua cache (vẫn ghi kết quả mới vào cache)
         self.inner = inner
         self.name = inner.name
         self.model = inner.model
@@ -90,12 +92,13 @@ class MeteredProvider(ExtractionProvider):
                 f"Vượt LLM_MAX_CALLS_PER_RUN={s.llm_max_calls_per_run} lượt gọi trong run này"
             )
         spent = self.ledger.spent()
-        if spent >= s.llm_daily_budget_usd:
+        if spent >= s.llm_daily_budget_vnd:
             raise LiveCallBlocked(
-                f"Vượt ngân sách ngày LLM_DAILY_BUDGET_USD={s.llm_daily_budget_usd}: đã dùng ${spent:.4f}"
+                f"Vượt ngân sách ngày LLM_DAILY_BUDGET_VND={s.llm_daily_budget_vnd:,.0f} đ: "
+                f"đã dùng {spent:,.1f} đ"
             )
         try:
-            self.pricing.require(model_candidates(self.inner, req))
+            self.pricing.require(model_candidates(self.inner, req), self.inner.name)
         except PricingError as e:
             if s.llm_require_pricing:
                 raise LiveCallBlocked(str(e)) from e
@@ -105,7 +108,7 @@ class MeteredProvider(ExtractionProvider):
         live = is_live(self.inner)
         digest = request_digest(req)
         key = cache_key(digest, ",".join(model_candidates(self.inner, req)))
-        if live and self.cache:
+        if live and self.cache and self.read_cache:
             hit = self.cache.get(key)
             if hit is not None:
                 self.run.records.append(
@@ -135,7 +138,9 @@ class MeteredProvider(ExtractionProvider):
             )
             raise
         self.model = res.model
-        cost = self.pricing.cost(res.model, res.input_tokens, res.output_tokens, res.cached_input_tokens)
+        cost = self.pricing.cost(
+            res.model, res.input_tokens, res.output_tokens, res.cached_input_tokens, provider=res.provider
+        )
         rec = CallRecord(
             res.provider,
             res.model,
@@ -158,7 +163,7 @@ class MeteredProvider(ExtractionProvider):
                 "in": rec.input_tokens,
                 "out": rec.output_tokens,
                 "cached": rec.cached_input_tokens,
-                "cost_usd": round(rec.cost_usd, 6),
+                "cost_vnd": round(rec.cost_vnd, 2),
                 "live": live,
             },
         )
@@ -172,7 +177,7 @@ class MeteredProvider(ExtractionProvider):
                     rec.input_tokens,
                     rec.output_tokens,
                     rec.cached_input_tokens,
-                    rec.cost_usd,
+                    rec.cost_vnd,
                 )
             )
             if self.cache:

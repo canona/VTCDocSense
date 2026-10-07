@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Tổng quan{% endblock %}
+{% block content %}
+<h1>Tổng quan</h1>
+{% if not allow_live %}<p class="warnbox">Đang tắt gọi API LLM thật (<code>ALLOW_LIVE_LLM=false</code>): chỉ dùng mock/fixture và cache, không phát sinh chi phí.</p>{% endif %}
+<div class="grid cards">
+  <div class="panel card"><div class="n">{{ total }}</div><div class="l">Tổng document</div></div>
+  {% for key in ['needs_review', 'auto_approved', 'approved', 'rejected', 'failed', 'processing', 'uploaded'] %}
+  <a class="panel card" href="/documents?status={{ key }}"><div class="n">{{ counts.get(key, 0) }}</div><div class="l">{{ key|status_label }}</div></a>
+  {% endfor %}
+  <div class="panel card"><div class="n">{{ '%.0f%%'|format(auto_rate * 100) if auto_rate is not none else '—' }}</div><div class="l">Tỷ lệ tự động duyệt</div></div>
+</div>
+
+<h2>Chi phí LLM</h2>
+<div class="grid cards">
+  <div class="panel card"><div class="n">{{ cost_today|vnd }}</div><div class="l">Hôm nay (bảng llm_calls) · {{ live_today }} lượt gọi thật</div></div>
+  <div class="panel card"><div class="n">{{ ledger_today|vnd }} / {{ daily_budget|vnd }}</div><div class="l">Sổ chi phí hôm nay / ngân sách ngày (gồm cả CLI)</div></div>
+  <div class="panel card"><div class="n">{{ cost_month|vnd }}{% if monthly_budget %} / {{ monthly_budget|vnd }}{% endif %}</div><div class="l">Tháng này{% if not monthly_budget %} (chưa đặt ngân sách tháng){% endif %}</div></div>
+</div>
+<p class="muted">Chi phí = 0 khi <code>config/pricing.toml</code> chưa có đơn giá.</p>
+
+<h2>Trường bị sửa nhiều nhất</h2>
+{% if top_fields %}
+<table style="max-width:520px"><tr><th>Trường</th><th>Số lần sửa</th></tr>
+{% for label, n in top_fields %}<tr><td>{{ label }}</td><td>{{ n }}</td></tr>{% endfor %}
+</table>
+<p class="muted">Gợi ý chỗ cần cải thiện prompt.</p>
+{% else %}<p class="muted">Chưa có lượt sửa nào.</p>{% endif %}
+{% endblock %}

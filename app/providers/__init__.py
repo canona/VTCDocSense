@@ -61,6 +61,7 @@ def build_provider(settings: Settings, name: ProviderName | None = None) -> Extr
             timeout_s=settings.provider_timeout_s,
             response_format=settings.openai_compat_response_format,
             model_filter=settings.openai_compat_model_filter,
+            reasoning_effort=settings.llm_reasoning_effort,
         )
     if name == "router":
         from app.providers.openai_compat import OpenAICompatProvider
@@ -76,6 +77,7 @@ def build_provider(settings: Settings, name: ProviderName | None = None) -> Extr
             response_format=settings.openai_compat_response_format,
             name="router",
             model_filter=settings.router_model_filter,
+            reasoning_effort=settings.llm_reasoning_effort,
         )
     if name == "anthropic":
         from app.providers.anthropic import AnthropicProvider

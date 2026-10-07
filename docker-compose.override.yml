@@ -2,7 +2,7 @@
 # Coolify chỉ dùng docker-compose.yml -> không publish port trên server.
 services:
   api:
-    ports: ["127.0.0.1:8000:8000"]
+    ports: ["127.0.0.1:9006:8000"]  # 8000 trên máy đã dùng cho Coolify
     environment:
       APP_ENV: local
       ENABLE_DOCS: "true"

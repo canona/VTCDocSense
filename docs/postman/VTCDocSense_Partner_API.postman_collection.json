@@ -1,0 +1,461 @@
+{
+  "info": {
+    "name": "VTCDocSense Partner API v1",
+    "_postman_id": "6f3d1c52-6a1e-4c55-9d8e-0d0c5e45e001",
+    "description": "API đối tác VTCDocSense. Đặt biến base_url, api_key (ds_test_… cho sandbox). Tài liệu: docs/PARTNER_API.md, {{base_url}}/v1/docs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://apidocsense.vtcdigital.top"
+    },
+    {
+      "key": "api_key",
+      "value": "ds_test_xxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "key": "webhook_url",
+      "value": "https://partner.example.vn/docsense/webhook"
+    },
+    {
+      "key": "document_id",
+      "value": ""
+    },
+    {
+      "key": "batch_id",
+      "value": ""
+    },
+    {
+      "key": "idempotency_key",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Upload",
+      "item": [
+        {
+          "name": "Upload PDF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/documents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documents"
+              ]
+            },
+            "description": "Gửi 1..N PDF (lặp trường files + external_id). Trả 202; lưu document_id/batch_id vào biến collection.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "external_id",
+                  "value": "HS-2026-0001",
+                  "type": "text"
+                },
+                {
+                  "key": "webhook_url",
+                  "value": "{{webhook_url}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sandbox_scenario",
+                  "value": "completed",
+                  "type": "text",
+                  "disabled": true,
+                  "description": "Chỉ key ds_test_: completed | failed | rejected"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('idempotency_key', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                  "const b = pm.response.json();",
+                  "pm.collectionVariables.set('batch_id', b.batch_id);",
+                  "if (b.documents && b.documents.length) pm.collectionVariables.set('document_id', b.documents[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload ZIP (batch)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/batches",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "batches"
+              ]
+            },
+            "description": "ZIP các thư mục hồ sơ; mỗi PDF -> 1 document, folder_name = thư mục.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "name",
+                  "value": "Lô tháng 10",
+                  "type": "text"
+                },
+                {
+                  "key": "webhook_url",
+                  "value": "{{webhook_url}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('idempotency_key', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+                  "const b = pm.response.json();",
+                  "pm.collectionVariables.set('batch_id', b.batch_id);",
+                  "if (b.documents && b.documents.length) pm.collectionVariables.set('document_id', b.documents[0].id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "Get document (trạng thái + kết quả)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/documents/{{document_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documents",
+                "{{document_id}}"
+              ]
+            },
+            "description": "status, needs_review, result (khi completed)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/documents?external_id=HS-2026-0001&limit=50",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documents"
+              ],
+              "query": [
+                {
+                  "key": "external_id",
+                  "value": "HS-2026-0001"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Lọc theo external_id / batch_id / status."
+          }
+        },
+        {
+          "name": "Export Excel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/documents/{{document_id}}/export.xlsx",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documents",
+                "{{document_id}}",
+                "export.xlsx"
+              ]
+            },
+            "description": "Chỉ khi completed (409 not_ready nếu chưa)."
+          }
+        },
+        {
+          "name": "Webhook history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/documents/{{document_id}}/webhooks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documents",
+                "{{document_id}}",
+                "webhooks"
+              ]
+            },
+            "description": "Các lần gửi webhook, số lần thử, mã HTTP."
+          }
+        },
+        {
+          "name": "Resend webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/documents/{{document_id}}/webhook/resend",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "documents",
+                "{{document_id}}",
+                "webhook",
+                "resend"
+              ]
+            },
+            "description": "Gửi lại trạng thái cuối. Body tùy chọn đổi URL.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"webhook_url\": \"{{webhook_url}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Batches",
+      "item": [
+        {
+          "name": "Get batch",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/batches/{{batch_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "batches",
+                "{{batch_id}}"
+              ]
+            },
+            "description": "Trạng thái batch, đếm theo trạng thái."
+          }
+        },
+        {
+          "name": "Export batch ZIP",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/batches/{{batch_id}}/export.zip",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "batches",
+                "{{batch_id}}",
+                "export.zip"
+              ]
+            },
+            "description": "<thư mục>/<tên>.xlsx + TongHop.xlsx"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Khác",
+      "item": [
+        {
+          "name": "Schema",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/schema",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "schema"
+              ]
+            },
+            "description": "JSON Schema của result."
+          }
+        },
+        {
+          "name": "Usage",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/usage?period=2026-10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "usage"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "2026-10"
+                }
+              ]
+            },
+            "description": "Số trang, chi phí, số lần gọi AI trong kỳ + hạn mức."
+          }
+        }
+      ]
+    }
+  ]
+}

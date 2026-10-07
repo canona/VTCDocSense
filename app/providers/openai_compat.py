@@ -231,6 +231,13 @@ class OpenAICompatProvider(ExtractionProvider):
 
     async def _call_model(self, req: ExtractionRequest, model: str) -> httpx.Response:
         resp = await self._post(self._body(req, self.response_format, model))
+        if resp.status_code == 400 and self.reasoning_effort:
+            log.warning(
+                "endpoint từ chối reasoning_effort, gửi lại không kèm",
+                extra={"provider": self.name, "model": model, "detail": resp.text[:300]},
+            )
+            self.reasoning_effort = None
+            resp = await self._post(self._body(req, self.response_format, model))
         if resp.status_code == 400 and self.response_format == "json_schema":
             log.warning(
                 "endpoint từ chối json_schema, chuyển sang json_object",

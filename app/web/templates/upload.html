@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Tải lên{% endblock %}
+{% block content %}
+<div class="up-head">
+  <h1>Tải lên giấy phép</h1>
+  <ol class="steps">
+    <li class="on"><span>1</span>Chọn file</li>
+    <li><span>2</span>Xem ước tính chi phí</li>
+    <li><span>3</span>Xác nhận chạy</li>
+  </ol>
+</div>
+{% if errors %}<div class="errors">{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+
+<form method="post" action="/upload" enctype="multipart/form-data" class="up-grid"
+      x-data="uploader({{ max_file_mb }}, {{ max_upload_mb }})" @submit="busy = true">
+  <section class="panel up-main">
+    <div class="dropzone" :class="{ over: over, filled: files.length }"
+         @click="$refs.input.click()"
+         @dragover.prevent="over = true" @dragleave.prevent="over = false"
+         @drop.prevent="over = false; add($event.dataTransfer.files)">
+      <svg class="dz-icon" viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
+      </svg>
+      <div class="dz-title">Kéo-thả file PDF hoặc ZIP vào đây</div>
+      <div class="dz-sub">Nhiều file cùng lúc · tối đa {{ max_file_mb }}MB mỗi PDF · {{ max_upload_mb }}MB mỗi lần tải</div>
+      <button type="button" class="btn primary" @click.stop="$refs.input.click()">Chọn file từ máy</button>
+      <input x-ref="input" type="file" name="files" multiple accept=".pdf,.zip" hidden @change="add($event.target.files)">
+    </div>
+
+    <template x-if="files.length">
+      <div class="file-list">
+        <div class="fl-head">
+          <strong x-text="`Đã chọn ${files.length} file`"></strong>
+          <span class="muted" x-text="'· ' + fmt(total)"></span>
+          <button type="button" class="linkbtn" @click="clear()">Bỏ chọn tất cả</button>
+        </div>
+        <table class="fl-table">
+          <template x-for="(f, i) in files" :key="f.name + f.size + i">
+            <tr :class="tooBig(f) && 'bad'">
+              <td class="fl-type"><span class="ftag" :class="isZip(f) ? 'zip' : 'pdf'" x-text="isZip(f) ? 'ZIP' : 'PDF'"></span></td>
+              <td class="fl-name" :title="f.name" x-text="f.name"></td>
+              <td class="fl-size" x-text="fmt(f.size)"></td>
+              <td class="fl-del"><button type="button" class="iconbtn" title="Bỏ file này" @click="remove(i)">×</button></td>
+            </tr>
+          </template>
+        </table>
+        <p class="errtext" x-show="problem" x-text="problem"></p>
+      </div>
+    </template>
+
+    <div class="field" x-show="hasPdf" x-cloak>
+      <label for="folder_name">Thư mục báo cho các PDF lẻ <span class="muted">(không bắt buộc)</span></label>
+      <input id="folder_name" type="text" name="folder_name" placeholder="vd: BÁO BÌNH THUẬN">
+      <div class="hint">Dùng để nhóm và đối chiếu chéo các GP cùng một báo. File trong ZIP tự lấy theo tên thư mục.</div>
+    </div>
+
+    <div class="up-actions">
+      <button class="primary big" type="submit" :disabled="!files.length || !!problem || busy">
+        <span x-show="!busy">Tải lên &amp; xem ước tính →</span>
+        <span x-show="busy" x-cloak>Đang tải lên…</span>
+      </button>
+      <span class="muted">Chưa chạy ngay: bước sau hiện chi phí ước tính để bạn xác nhận.</span>
+    </div>
+  </section>
+
+  <aside class="panel up-side">
+    <h3>Tải cả thư mục báo</h3>
+    <p>Nén thành 1 file ZIP, mỗi thư mục là một báo:</p>
+    <pre class="tree">lo_giay_phep.zip
+├─ BÁO BÌNH THUẬN/
+│  ├─ GP 2011.pdf
+│  └─ GP 2021.pdf
+└─ BÁO ẤP BẮC/
+   └─ GP 2012.pdf</pre>
+    <p class="muted">Các GP cùng thư mục được đối chiếu số/ngày với nhau để tăng độ tin cậy.</p>
+    <h3>Chi phí</h3>
+    <p class="muted">PDF có sẵn chữ rẻ hơn bản scan. File đã xử lý trước đây (cùng nội dung) dùng lại kết quả, không tính phí lần nữa.</p>
+  </aside>
+</form>
+
+<script>
+function uploader(maxFileMb, maxUploadMb) {
+  return {
+    files: [], over: false, busy: false,
+    get total() { return this.files.reduce((s, f) => s + f.size, 0); },
+    get hasPdf() { return this.files.some((f) => !this.isZip(f)); },
+    get problem() {
+      const big = this.files.filter((f) => this.tooBig(f));
+      if (big.length) return `${big.length} file PDF vượt ${maxFileMb}MB — hãy bỏ ra.`;
+      if (this.total > maxUploadMb * 1048576) return `Tổng dung lượng vượt ${maxUploadMb}MB — hãy chia làm nhiều lần.`;
+      const bad = this.files.filter((f) => !/\.(pdf|zip)$/i.test(f.name));
+      if (bad.length) return `Chỉ nhận PDF hoặc ZIP: ${bad.map((f) => f.name).join(', ')}`;
+      return '';
+    },
+    isZip(f) { return /\.zip$/i.test(f.name); },
+    tooBig(f) { return !this.isZip(f) && f.size > maxFileMb * 1048576; },
+    fmt(n) { return n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; },
+    add(list) {
+      const seen = new Set(this.files.map((f) => f.name + f.size));
+      for (const f of list) if (!seen.has(f.name + f.size)) this.files.push(f);
+      this.sync();
+    },
+    remove(i) { this.files.splice(i, 1); this.sync(); },
+    clear() { this.files = []; this.sync(); },
+    sync() {  // input file chỉ gửi được qua DataTransfer
+      const dt = new DataTransfer();
+      this.files.forEach((f) => dt.items.add(f));
+      this.$refs.input.files = dt.files;
+    },
+  };
+}
+</script>
+{% endblock %}

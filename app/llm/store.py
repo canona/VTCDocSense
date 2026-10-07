@@ -95,7 +95,14 @@ class LedgerEntry:
     input_tokens: int
     output_tokens: int
     cached_input_tokens: int
-    cost_usd: float
+    cost_vnd: float
+
+
+def _ledger_row(d: dict[str, Any]) -> dict[str, Any]:
+    """Bản ghi cũ (trước khi chuyển sang VND) có cost_usd; khi đó chưa có đơn giá nên luôn = 0."""
+    if "cost_usd" in d:
+        d["cost_vnd"] = d.pop("cost_usd")
+    return d
 
 
 class Ledger:
@@ -117,11 +124,13 @@ class Ledger:
         if not p.exists():
             return []
         return [
-            LedgerEntry(**json.loads(line)) for line in p.read_text(encoding="utf-8").splitlines() if line
+            LedgerEntry(**_ledger_row(json.loads(line)))
+            for line in p.read_text(encoding="utf-8").splitlines()
+            if line
         ]
 
     def spent(self, day: date | None = None) -> float:
-        return sum(e.cost_usd for e in self.entries(day))
+        return sum(e.cost_vnd for e in self.entries(day))
 
 
 class Fixtures:

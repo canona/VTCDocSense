@@ -57,8 +57,33 @@ def text_layer_ok(text: str) -> bool:
     return junk / len(t) < 0.02 and vi / len(letters) > 0.05
 
 
+def inspect_pdf(data: bytes) -> tuple[int, int]:
+    """Đọc nhanh (không render): (số trang, số trang có lớp chữ tốt). Dùng để ước tính chi phí."""
+    try:
+        doc = pdfium.PdfDocument(data)
+    except pdfium.PdfiumError as e:
+        raise PdfError("corrupt", f"Không đọc được PDF: {e}") from e
+    try:
+        good = 0
+        for i in range(len(doc)):
+            page = doc[i]
+            tp = page.get_textpage()
+            good += text_layer_ok(tp.get_text_range())
+            tp.close()
+            page.close()
+        return len(doc), good
+    finally:
+        doc.close()
+
+
 def load_pdf(
-    data: bytes, *, max_pages: int, max_mb: int, dpi: int = 150, grayscale: bool = True
+    data: bytes,
+    *,
+    max_pages: int,
+    max_mb: int,
+    dpi: int = 150,
+    grayscale: bool = True,
+    render_all: bool = False,
 ) -> list[RawPage]:
     if len(data) > max_mb * 1024 * 1024:
         raise PdfError("too_large", f"File vượt quá {max_mb}MB")
@@ -84,7 +109,7 @@ def load_pdf(
             text = textpage.get_text_range()
             # Trang có lớp chữ tốt chỉ cần ảnh trang 1 (để đọc số/ngày trong chữ ký số) -> tiết kiệm RAM
             image = None
-            if i == 0 or not text_layer_ok(text):
+            if render_all or i == 0 or not text_layer_ok(text):
                 image = page.render(scale=dpi / 72, may_draw_forms=True).to_pil()
                 image = image.convert("L" if grayscale else "RGB")
             pages.append(RawPage(index=i + 1, width_pt=w, height_pt=h, text=text, image=image))

@@ -1,17 +1,34 @@
-# Đơn giá token (USD / 1 triệu token). TỰ ĐIỀN theo bảng giá hiện hành của nhà cung cấp;
-# repo không ghi sẵn giá để tránh số liệu sai/lỗi thời.
+# Đơn giá token cho 1 TRIỆU token. TỰ ĐIỀN theo bảng giá hiện hành của nhà cung cấp.
 #
-# - Khóa model: khớp chính xác tên model trả về, hoặc tiền tố dài nhất (vd "gemini-2.5-flash" khớp
-#   "gemini-2.5-flash-preview-xx").
-# - [default]: áp cho model không có trong bảng. BẮT BUỘC nếu dùng danh sách model ("a,b") hoặc "auto".
-# - Gọi API thật mà model chưa có đơn giá -> bị từ chối (không kiểm soát được ngân sách).
+# - Mọi chi phí/ngân sách trong hệ thống tính bằng ĐỒNG (LLM_DAILY_BUDGET_VND, ngân sách tháng của tenant).
+# - Khóa model: "<provider>/<model>" (giá riêng theo provider: router, gemini, openai, ...) được ưu tiên,
+#   rồi "<model>", rồi tiền tố dài nhất (vd "gemini-2.5-flash" khớp "gemini-2.5-flash-preview-xx").
+# - [default]: áp cho model không có trong bảng (cần khi dùng danh sách model "a,b" hoặc "auto").
+# - currency = "VND" (mặc định) hoặc "USD". Giá USD quy đổi sang đồng theo vnd_per_usd;
+#   thiếu vnd_per_usd -> giá USD bị bỏ qua (coi như chưa có giá).
 # - cached_input: giá phần input trúng prompt cache (mặc định = input).
-# - batch_discount: hệ số khi dùng Batch API (vd 0.5), dự phòng cho USE_BATCH_API.
-#
-# Ví dụ (giá trị minh họa, KHÔNG phải giá thật):
-# [models."ten-model-flash"]
-# input = 0.0
-# output = 0.0
-# cached_input = 0.0
+# - min_per_request: phí tối thiểu mỗi request (cùng đơn vị currency).
+# - LLM_REQUIRE_PRICING=true -> model chưa có giá bị từ chối gọi thật.
+
+# Tỷ giá cho các model niêm yết giá USD (TỰ ĐIỀN khi cần, vd theo tỷ giá ngân hàng hiện hành)
+# vnd_per_usd = 0
 
 [models]
+
+# vilao.ai (LLM_PROVIDER=router) - bảng giá vilao ngày 2026-10-07, đồng / 1 triệu token
+# (khớp GET https://api.vilao.ai/v1/models: price_per_input_token=400, price_per_output_token=1600, ...)
+[models."router/gemini-3.8-flash"]
+input = 400
+output = 1600
+cached_input = 160
+min_per_request = 3
+
+# Các model vilao khác đã đăng ký; key hiện chỉ gắn gemini-3.8-flash
+[models."router/gemini-3.8-flash-high"]
+input = 213
+output = 340
+min_per_request = 10
+
+[models."router/ag/gemini-3.6-flash-low"]
+input = 700
+output = 1600

@@ -7,6 +7,7 @@ Mọi upload thuộc tenant mặc định.
 import hmac
 import uuid
 from collections.abc import AsyncIterator
+from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import Annotated, Any
 from urllib.parse import quote
@@ -17,11 +18,13 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
-from app.db.models import DEFAULT_TENANT_ID, Batch, Document, LlmCall
+from app.db.models import DEFAULT_TENANT_ID, Batch, DocStatus, Document, LlmCall
 from app.db.session import get_sessionmaker
 from app.models.schema import GiayPhep
 from app.pipeline.export import to_xlsx
-from app.services.documents import create_documents, latest_extraction
+from app.services.documents import create_documents
+from app.services.estimate import estimate
+from app.services.queries import latest_extraction
 from app.services.storage import IncomingPdf, UploadError, is_pdf, read_zip
 
 
@@ -75,13 +78,21 @@ async def _accept(
     files: list[IncomingPdf],
     source: str,
     name: str | None,
+    auto_start: bool,
 ) -> dict[str, Any]:
     batch, docs = await create_documents(
         session, settings, DEFAULT_TENANT_ID, files, source=source, batch_name=name
     )
-    for d in docs:
-        await request.app.state.enqueue(d.id)
-    return {"batch_id": str(batch.id), "documents": [_doc_brief(d) for d in docs]}
+    if auto_start:
+        for d in docs:
+            await request.app.state.enqueue(d.id)
+    est = estimate(settings, [(d.pages, d.pdf_type) for d in docs])
+    return {
+        "batch_id": str(batch.id),
+        "started": auto_start,
+        "estimate": asdict(est),
+        "documents": [_doc_brief(d) for d in docs],
+    }
 
 
 @router.post("/documents", status_code=status.HTTP_202_ACCEPTED)
@@ -91,6 +102,7 @@ async def upload_documents(
     settings: SettingsDep,
     files: Annotated[list[UploadFile], File(description="1..N file PDF")],
     folder_name: Annotated[str | None, Form()] = None,
+    auto_start: Annotated[bool, Form(description="true: chạy ngay; mặc định chờ /start")] = False,
 ) -> dict[str, Any]:
     incoming: list[IncomingPdf] = []
     for f in files:
@@ -98,7 +110,7 @@ async def upload_documents(
         if not is_pdf(data):
             raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, f"{f.filename}: không phải PDF")
         incoming.append(IncomingPdf(folder_name, f.filename or "document.pdf", data))
-    return await _accept(request, session, settings, incoming, "upload", None)
+    return await _accept(request, session, settings, incoming, "upload", None, auto_start)
 
 
 @router.post("/batches", status_code=status.HTTP_202_ACCEPTED)
@@ -107,13 +119,35 @@ async def upload_zip(
     session: SessionDep,
     settings: SettingsDep,
     file: Annotated[UploadFile, File(description="ZIP chứa các thư mục báo")],
+    auto_start: Annotated[bool, Form(description="true: chạy ngay; mặc định chờ /start")] = False,
 ) -> dict[str, Any]:
     data = await _read_limited(file, settings.max_upload_mb * 1024 * 1024)
     try:
         incoming = read_zip(data, max_file_bytes=settings.max_file_mb * 1024 * 1024)
     except UploadError as e:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(e)) from e
-    return await _accept(request, session, settings, incoming, "zip", file.filename)
+    return await _accept(request, session, settings, incoming, "zip", file.filename, auto_start)
+
+
+@router.post("/batches/{batch_id}/start", status_code=status.HTTP_202_ACCEPTED)
+async def start_batch(request: Request, session: SessionDep, batch_id: uuid.UUID) -> dict[str, Any]:
+    """Xác nhận chạy (tốn phí) các document còn ở trạng thái uploaded."""
+    batch = await session.get(Batch, batch_id)
+    if batch is None or batch.tenant_id != DEFAULT_TENANT_ID:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Không tìm thấy batch")
+    docs = await start_documents(request, session, batch.id)
+    return {"batch_id": str(batch.id), "started": len(docs)}
+
+
+async def start_documents(request: Request, session: AsyncSession, batch_id: uuid.UUID) -> list[Document]:
+    docs = list(
+        await session.scalars(
+            select(Document).where(Document.batch_id == batch_id, Document.status == DocStatus.uploaded)
+        )
+    )
+    for d in docs:
+        await request.app.state.enqueue(d.id)
+    return docs
 
 
 async def _get_doc(session: AsyncSession, doc_id: uuid.UUID) -> Document:
@@ -142,7 +176,7 @@ async def get_document(session: SessionDep, doc_id: uuid.UUID) -> dict[str, Any]
         **_doc_brief(doc),
         "extraction": None
         if ext is None
-        else {"version": ext.version, "model": ext.model, "cost_usd": ext.cost_usd, "data": ext.data},
+        else {"version": ext.version, "model": ext.model, "cost_vnd": ext.cost_vnd, "data": ext.data},
     }
 
 
@@ -186,7 +220,7 @@ async def llm_calls(session: SessionDep, limit: int = 50) -> dict[str, Any]:
         await session.execute(
             select(
                 func.count(LlmCall.id),
-                func.coalesce(func.sum(LlmCall.cost_usd), 0.0),
+                func.coalesce(func.sum(LlmCall.cost_vnd), 0.0),
                 func.coalesce(func.sum(LlmCall.input_tokens), 0),
                 func.coalesce(func.sum(LlmCall.output_tokens), 0),
             ).where(LlmCall.created_at >= today, LlmCall.live.is_(True))
@@ -194,7 +228,7 @@ async def llm_calls(session: SessionDep, limit: int = 50) -> dict[str, Any]:
     ).one()
     calls = await session.scalars(select(LlmCall).order_by(LlmCall.created_at.desc()).limit(min(limit, 500)))
     return {
-        "today_live": {"calls": row[0], "cost_usd": row[1], "input_tokens": row[2], "output_tokens": row[3]},
+        "today_live": {"calls": row[0], "cost_vnd": row[1], "input_tokens": row[2], "output_tokens": row[3]},
         "calls": [
             {
                 "created_at": c.created_at.isoformat(),
@@ -205,7 +239,7 @@ async def llm_calls(session: SessionDep, limit: int = 50) -> dict[str, Any]:
                 "in": c.input_tokens,
                 "out": c.output_tokens,
                 "cached": c.cached_input_tokens,
-                "cost_usd": c.cost_usd,
+                "cost_vnd": c.cost_vnd,
                 "cache_hit": c.cache_hit,
                 "live": c.live,
                 "ms": c.duration_ms,

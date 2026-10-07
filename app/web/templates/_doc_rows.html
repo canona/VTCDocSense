@@ -1,0 +1,25 @@
+{% macro cell(d, path, value) -%}
+{%- set c = (d.summary or {}).get(path, {}).get('c') -%}
+<td class="{{ 'c-' ~ c if c in ('medium', 'low') }}">{{ value if value else '' }}</td>
+{%- endmacro %}
+<table>
+  <tr><th><input type="checkbox" onclick="document.querySelectorAll('input[name=ids]').forEach(x => x.checked = this.checked)"></th>
+    <th>Thư mục</th><th>File</th><th>Loại</th><th>Số GP</th><th>Ngày cấp</th><th>Cơ quan báo chí</th><th>Trạng thái</th><th>Người rà soát</th><th>Cập nhật</th></tr>
+  {% for d in docs %}
+  <tr>
+    <td><input type="checkbox" name="ids" value="{{ d.id }}" form="bulk"></td>
+    <td>{{ d.folder_name or '' }}</td>
+    <td><a href="/documents/{{ d.id }}">{{ d.file_name }}</a>{% if d.error %}<div class="muted" title="{{ d.error }}">{{ d.error[:60] }}</div>{% endif %}</td>
+    <td>{{ d.loai_van_ban|loai_label }}</td>
+    {{ cell(d, 'so_gp', d.so_gp) }}
+    {{ cell(d, 'ngay_cap', d.ngay_cap|dmy) }}
+    {{ cell(d, 'co_quan_bao_chi.ten', (d.summary or {}).get('co_quan_bao_chi.ten', {}).get('v')) }}
+    <td><span class="badge st-{{ d.status }}">{{ d.status|status_label }}</span></td>
+    <td>{{ d.reviewed_by or '' }}</td>
+    <td class="muted">{{ d.updated_at|dt }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="10" class="muted">Không có document nào.</td></tr>
+  {% endfor %}
+</table>
+<p class="muted">{{ docs|length }} document (tối đa 500). Ô vàng = độ tin cậy trung bình, cam = thấp.</p>

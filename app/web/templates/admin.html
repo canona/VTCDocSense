@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Quản trị{% endblock %}
+{% block content %}
+<h1>Quản trị</h1>
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+{% if new_key %}<div class="warnbox"><strong>API key mới (chỉ hiện 1 lần, hãy lưu lại):</strong><br><code style="user-select:all">{{ new_key }}</code></div>{% endif %}
+<div class="tabs" style="margin:8px 0"><a href="#users">Người dùng</a><a href="#tenants">Tenant</a><a href="#keys">API key</a><a href="#budget">Ngân sách</a><a href="#audit">Audit log</a></div>
+
+<h2 id="users">Người dùng &amp; vai trò</h2>
+<table style="max-width:900px">
+  <tr><th>Email</th><th>Vai trò</th><th>Hoạt động</th><th>Tạo lúc</th><th></th></tr>
+  {% for u in users %}
+  {% set fid = 'u' ~ loop.index %}
+  <tr>
+    <td><form id="{{ fid }}" method="post" action="/admin/users"></form>{{ u.email }}<input form="{{ fid }}" type="hidden" name="email" value="{{ u.email }}"></td>
+    <td><select form="{{ fid }}" name="role">{% for r in roles %}<option value="{{ r }}" {{ 'selected' if u.role == r }}>{{ r }}</option>{% endfor %}</select></td>
+    <td><select form="{{ fid }}" name="active"><option value="1" {{ 'selected' if u.active }}>Có</option><option value="0" {{ 'selected' if not u.active }}>Khóa</option></select></td>
+    <td class="muted">{{ u.created_at|dt }}</td>
+    <td><button form="{{ fid }}" type="submit">Lưu</button></td>
+  </tr>
+  {% endfor %}
+  <tr>
+    <td><form id="u-new" method="post" action="/admin/users"></form><input form="u-new" type="email" name="email" placeholder="email mới" required></td>
+    <td><select form="u-new" name="role">{% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}</select></td>
+    <td><input form="u-new" type="hidden" name="active" value="1">—</td><td></td>
+    <td><button form="u-new" type="submit" class="primary">Thêm</button></td>
+  </tr>
+</table>
+<p class="muted">Production: người dùng cũng phải được cho phép trong chính sách Cloudflare Access. Email trong BOOTSTRAP_ADMIN_EMAILS luôn là admin.</p>
+
+<h2 id="tenants">Tenant</h2>
+<table style="max-width:1200px">
+  <tr><th>Slug</th><th>Tên</th><th>Bắt buộc người duyệt</th><th>Ngân sách tháng (đồng)</th><th>Hạn mức trang/tháng</th><th>Request/phút</th><th>Webhook secret</th><th></th></tr>
+  {% for t in tenants %}
+  {% set fid = 't' ~ loop.index %}
+  <tr>
+    <td><form id="{{ fid }}" method="post" action="/admin/tenants/{{ t.id }}"></form>{{ t.slug }}</td>
+    <td><input form="{{ fid }}" type="text" name="name" value="{{ t.name }}"></td>
+    <td><input form="{{ fid }}" type="checkbox" name="require_human_review" value="1" {{ 'checked' if t.require_human_review }}></td>
+    <td><input form="{{ fid }}" type="number" step="1000" min="0" name="monthly_budget_vnd" value="{{ '%.0f'|format(t.monthly_budget_vnd) if t.monthly_budget_vnd is not none else '' }}"></td>
+    <td><input form="{{ fid }}" type="number" min="0" name="monthly_page_quota" placeholder="không giới hạn" value="{{ t.monthly_page_quota if t.monthly_page_quota is not none else '' }}"></td>
+    <td><input form="{{ fid }}" type="number" min="1" name="rate_limit_per_minute" placeholder="{{ settings.api_rate_limit_per_minute }}" value="{{ t.rate_limit_per_minute or '' }}"></td>
+    <td>{% if t.webhook_secret %}<details><summary class="muted">xem</summary><code style="word-break:break-all">{{ t.webhook_secret }}</code></details>{% endif %}
+      <form method="post" action="/admin/tenants/{{ t.id }}/webhook-secret" onsubmit="return confirm('Tạo secret mới? Secret cũ mất hiệu lực ngay.')"><button type="submit">{{ 'Xoay' if t.webhook_secret else 'Tạo' }}</button></form></td>
+    <td><button form="{{ fid }}" type="submit">Lưu</button></td>
+  </tr>
+  {% endfor %}
+  <tr>
+    <td><form id="t-new" method="post" action="/admin/tenants"></form><input form="t-new" type="text" name="slug" placeholder="slug" required pattern="[a-z0-9-]+"></td>
+    <td><input form="t-new" type="text" name="name" placeholder="Tên đối tác" required></td><td colspan="5"></td>
+    <td><button form="t-new" type="submit" class="primary">Tạo</button></td>
+  </tr>
+</table>
+
+<h2 id="keys">API key</h2>
+<p class="muted">Key chỉ lưu dạng hash, key thô chỉ hiện 1 lần khi tạo. <code>ds_test_…</code> = sandbox (không bao giờ gọi LLM, kết quả mẫu). Dùng cho API đối tác <code>/v1</code> (tài liệu: <a href="/v1/docs">/v1/docs</a>).</p>
+<table style="max-width:1000px">
+  <tr><th>Prefix</th><th>Tên</th><th>Tenant</th><th>Loại</th><th>Hết hạn</th><th>Trạng thái</th><th></th></tr>
+  {% for k in keys %}
+  <tr><td><code>{{ k.prefix }}…</code></td><td>{{ k.name }}</td><td>{{ tenant_names.get(k.tenant_id, '') }}</td>
+    <td>{{ 'sandbox' if k.sandbox else 'live' }}</td><td>{{ k.expires_at|dt or 'không' }}</td>
+    <td>{% if k.revoked_at %}<span class="badge st-rejected">đã thu hồi</span>{% elif k.expires_at and k.expires_at.replace(tzinfo=None) < now.replace(tzinfo=None) %}<span class="badge st-failed">hết hạn</span>{% else %}<span class="badge st-approved">hoạt động</span>{% endif %}</td>
+    <td>{% if not k.revoked_at %}<form method="post" action="/admin/keys/{{ k.id }}/revoke" onsubmit="return confirm('Thu hồi key {{ k.prefix }}…?')"><button class="danger" type="submit">Thu hồi</button></form>{% endif %}</td></tr>
+  {% endfor %}
+  <tr>
+    <td colspan="2"><form id="k-new" method="post" action="/admin/keys"></form><input form="k-new" type="text" name="name" placeholder="Tên key (vd: Đối tác A - production)" required></td>
+    <td><select form="k-new" name="tenant_id">{% for t in tenants %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}</select></td>
+    <td><label><input form="k-new" type="checkbox" name="sandbox" value="1"> sandbox</label></td>
+    <td><input form="k-new" type="number" name="expires_days" min="1" placeholder="số ngày"></td><td></td>
+    <td><button form="k-new" type="submit" class="primary">Tạo key</button></td>
+  </tr>
+</table>
+
+<h2 id="budget">Ngân sách LLM</h2>
+<div class="panel" style="max-width:700px">
+  <div>Gọi API thật: <strong>{{ 'BẬT' if settings.allow_live_llm else 'TẮT' }}</strong> (ALLOW_LIVE_LLM)</div>
+  <div>Ngân sách ngày: <strong>{{ settings.llm_daily_budget_vnd|vnd }}</strong> (LLM_DAILY_BUDGET_VND) · tối đa {{ settings.llm_max_calls_per_run }} lượt gọi/document (LLM_MAX_CALLS_PER_RUN)</div>
+  <div>Model: chữ <code>{{ settings.model_text or 'mặc định' }}</code> · scan <code>{{ settings.model_vision or 'mặc định' }}</code></div>
+  <p class="muted">Các giới hạn cứng đặt bằng biến môi trường (không tăng được từ giao diện). Ngân sách tháng đặt theo tenant ở bảng trên.</p>
+</div>
+
+<h2 id="audit">Audit log (200 gần nhất)</h2>
+<table>
+  <tr><th>Thời điểm</th><th>Người</th><th>Hành động</th><th>Đối tượng</th><th>Chi tiết</th></tr>
+  {% for a in logs %}
+  <tr><td class="muted">{{ a.created_at|dt }}</td><td>{{ a.actor }}</td><td>{{ a.action }}</td><td>{{ a.target_type or '' }} {{ a.target_id or '' }}</td><td class="muted" style="font-size:12px">{{ a.details|tojson }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

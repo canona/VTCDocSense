@@ -1,0 +1,237 @@
+{
+  "loai_van_ban": "GP_HOAT_DONG_LUAT_2016",
+  "ten_loai_giay_phep": "Giấy phép hoạt động báo in và báo điện tử",
+  "so_gp": {
+    "value": "635/GP-BTTTT",
+    "confidence": "medium",
+    "note": "số viết tay",
+    "source_page": 1,
+    "verified_by": null
+  },
+  "ngay_cap": {
+    "value": "2021-09-29",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1,
+    "verified_by": null
+  },
+  "co_quan_cap": {
+    "value": "Bộ Thông tin và Truyền thông",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1,
+    "verified_by": null
+  },
+  "nguoi_ky": {
+    "value": "Phạm Anh Tuấn",
+    "confidence": "high",
+    "note": null,
+    "source_page": 3,
+    "verified_by": null
+  },
+  "chuc_vu_nguoi_ky": {
+    "value": "KT. Bộ trưởng - Thứ trưởng",
+    "confidence": "high",
+    "note": null,
+    "source_page": 3,
+    "verified_by": null
+  },
+  "can_cu_gp_goc": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": 1,
+    "verified_by": null
+  },
+  "van_ban_de_nghi": {
+    "value": "Văn bản số 191-CV/TU của Tỉnh ủy An Giang",
+    "confidence": "high",
+    "note": null,
+    "source_page": 1,
+    "verified_by": null
+  },
+  "co_quan_chu_quan": {
+    "ten": {
+      "value": "Tỉnh ủy An Giang",
+      "confidence": "high",
+      "note": null,
+      "source_page": 1,
+      "verified_by": null
+    },
+    "dia_chi": {
+      "value": "Số 01, đường Tôn Đức Thắng, phường Mỹ Bình, thành phố Long Xuyên, tỉnh An Giang",
+      "confidence": "high",
+      "note": null,
+      "source_page": 1,
+      "verified_by": null
+    },
+    "dien_thoai": {
+      "value": "0296.3852223",
+      "confidence": "high",
+      "note": null,
+      "source_page": 1,
+      "verified_by": null
+    },
+    "fax": {
+      "value": null,
+      "confidence": "high",
+      "note": null,
+      "source_page": 1,
+      "verified_by": null
+    }
+  },
+  "co_quan_bao_chi": {
+    "ten": {
+      "value": "Báo An Giang",
+      "confidence": "high",
+      "note": null,
+      "source_page": 1,
+      "verified_by": null
+    },
+    "loai_hinh_dien_tu": {
+      "value": null,
+      "confidence": "high",
+      "note": null,
+      "source_page": 1,
+      "verified_by": null
+    },
+    "ten_chuyen_trang": {
+      "value": null,
+      "confidence": "high",
+      "note": null,
+      "source_page": 1,
+      "verified_by": null
+    }
+  },
+  "ton_chi_muc_dich": {
+    "value": "- Tuyên truyền đường lối / - Phản ánh tâm tư",
+    "confidence": "high",
+    "note": null,
+    "source_page": 2,
+    "verified_by": null
+  },
+  "doi_tuong_phuc_vu": {
+    "value": "Cán bộ, đảng viên, nhân dân trong Tỉnh và bạn đọc quan tâm.",
+    "confidence": "high",
+    "note": null,
+    "source_page": 2,
+    "verified_by": null
+  },
+  "pham_vi_phat_hanh": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": 1,
+    "verified_by": null
+  },
+  "phuong_thuc_phat_hanh": {
+    "value": null,
+    "confidence": "high",
+    "note": null,
+    "source_page": 1,
+    "verified_by": null
+  },
+  "tru_so": {
+    "dia_chi": {
+      "value": "399B Hà Hoàng Hổ, phường Mỹ Xuyên, thành phố Long Xuyên, tỉnh An Giang",
+      "confidence": "high",
+      "note": null,
+      "source_page": 2,
+      "verified_by": null
+    },
+    "dien_thoai": {
+      "value": "0296.3841854",
+      "confidence": "high",
+      "note": null,
+      "source_page": 2,
+      "verified_by": null
+    },
+    "fax": {
+      "value": null,
+      "confidence": "high",
+      "note": null,
+      "source_page": 1,
+      "verified_by": null
+    },
+    "email": {
+      "value": "toasoanbaoangiang@gmail.com",
+      "confidence": "high",
+      "note": null,
+      "source_page": 2,
+      "verified_by": null
+    },
+    "website": {
+      "value": null,
+      "confidence": "high",
+      "note": null,
+      "source_page": 1,
+      "verified_by": null
+    }
+  },
+  "hieu_luc": {
+    "value": "Có hiệu lực kể từ ngày ký",
+    "confidence": "high",
+    "note": null,
+    "source_page": 3,
+    "verified_by": null
+  },
+  "gp_duoc_thay_the": [
+    {
+      "so_gp": "2217/GP-BTTTT",
+      "ngay": "19/12/2011"
+    }
+  ],
+  "an_pham": [
+    {
+      "loai_hinh": "BAO_IN",
+      "cap": "Ấn phẩm chính",
+      "ten_goi": "Báo An Giang",
+      "ngon_ngu": "Tiếng Việt",
+      "ky_han": "05 kỳ/tuần",
+      "thoi_gian_phat_hanh": null,
+      "khuon_kho": "30cm x 42cm",
+      "so_trang": "12 trang",
+      "so_luong": null,
+      "noi_in": null,
+      "ten_mien": null,
+      "isp": null
+    },
+    {
+      "loai_hinh": "BAO_DIEN_TU",
+      "cap": null,
+      "ten_goi": "Báo An Giang Online",
+      "ngon_ngu": "Tiếng Việt",
+      "ky_han": null,
+      "thoi_gian_phat_hanh": null,
+      "khuon_kho": null,
+      "so_trang": null,
+      "so_luong": null,
+      "noi_in": null,
+      "ten_mien": "baoangiang.com.vn",
+      "isp": "Viettel IDC"
+    }
+  ],
+  "lanh_dao": [
+    {
+      "chuc_vu": "TONG_BIEN_TAP",
+      "ho_ten": "Trần Thị Bích Vân"
+    }
+  ],
+  "schema_version": "v1",
+  "meta": {
+    "file_name": "GiayPhep_mau.pdf",
+    "pages": 3,
+    "logical_pages": 1,
+    "pdf_type": "SCAN",
+    "provider": "sandbox",
+    "model": "fixture",
+    "duration_ms": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "classified_by": "model"
+  },
+  "needs_review": true,
+  "review_reasons": [
+    "so_gp: độ tin cậy medium (số viết tay) - KẾT QUẢ MẪU SANDBOX, không phải dữ liệu thật"
+  ]
+}

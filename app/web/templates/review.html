@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.file_name }}{% endblock %}
+{% block content %}
+{% set can_review = user.can('reviewer') %}
+<script src="/static/review.js"></script>
+<div x-data="reviewScreen({ docId: '{{ doc.id }}', pages: {{ [page_labels|length, 1]|max }}, canReview: {{ 'true' if can_review else 'false' }},
+     anPham: {{ an_pham|tojson|forceescape }}, lanhDao: {{ lanh_dao|tojson|forceescape }}, thayThe: {{ thay_the|tojson|forceescape }} })">
+<div class="review-bar">
+  <span class="title" title="{{ doc.file_name }}">{{ doc.file_name }}</span>
+  <span class="badge st-{{ doc.status }}">{{ doc.status|status_label }}</span>
+  <span class="muted">{{ doc.folder_name or '' }}{% if ext %} · v{{ ext.version }} · {{ ext.model or '' }}{% endif %}</span>
+  {% if doc.reviewed_by %}<span class="muted">· duyệt bởi {{ doc.reviewed_by }}</span>{% endif %}
+  <span style="margin-left:auto"></span>
+  {% if ext %}<a class="btn" href="/documents/{{ doc.id }}/export.xlsx">Excel</a>{% endif %}
+  <button type="button" hx-get="/documents/{{ doc.id }}/history" hx-target="#history" hx-swap="innerHTML">Lịch sử</button>
+  {% if can_review %}<button type="button" hx-get="/documents/{{ doc.id }}/rerun" hx-target="#modal" hx-swap="innerHTML">Chạy lại trích xuất</button>{% endif %}
+  <a class="btn" href="/review/next?after={{ doc.id }}" title="Phím N">Tiếp ›</a>
+</div>
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+{% if errors %}<div class="errors">{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+{% if doc.error %}<div class="errors">Lỗi xử lý: {{ doc.error }}</div>{% endif %}
+<div id="modal"></div>
+
+<div class="review">
+  <section class="viewer">
+    <div class="tools">
+      <button type="button" @click="go(page - 1)" :disabled="page <= 1">‹</button>
+      <span>Trang <strong x-text="page"></strong> / <span x-text="pages"></span></span>
+      <button type="button" @click="go(page + 1)" :disabled="page >= pages">›</button>
+      {% for label in page_labels %}<span class="muted" x-show="page === {{ loop.index }}">(trang gốc {{ label }})</span>{% endfor %}
+      <span style="margin-left:auto"></span>
+      <button type="button" @click="zoom = Math.max(0.4, zoom - 0.2)">−</button>
+      <span x-text="Math.round(zoom * 100) + '%'"></span>
+      <button type="button" @click="zoom = Math.min(3, zoom + 0.2)">+</button>
+      <button type="button" @click="zoom = 1">Vừa</button>
+    </div>
+    <div class="canvas">
+      {% if page_labels %}<img :src="src" :style="`width:${zoom * 100}%`" alt="Trang PDF">
+      {% else %}<p class="muted">Không hiển thị được trang PDF.</p>{% endif %}
+    </div>
+  </section>
+
+  <section class="form-pane">
+  {% if not ext %}
+    <p class="muted" style="padding-top:12px">Chưa có kết quả trích xuất (trạng thái: {{ doc.status|status_label }}).</p>
+  {% else %}
+  <form id="review-form" method="post" action="/documents/{{ doc.id }}/save" @input="dirty = true" @focusin="onFocus($event)" @submit="dirty = false">
+    <input type="hidden" name="action" value="save">
+    <input type="hidden" name="lists" value="1">
+    <div class="sticky-actions">
+      {% if can_review %}
+      <button class="primary" type="button" @click="submit('save')">Lưu <span class="kbd">Ctrl+S</span></button>
+      <button class="ok" type="button" @click="confirm('Duyệt cả document?') && submit('approve')">Duyệt <span class="kbd">A</span></button>
+      <button class="danger" type="button" @click="confirm('Từ chối document này?') && submit('reject')">Từ chối</button>
+      {% else %}<span class="muted">Chế độ chỉ xem (viewer)</span>{% endif %}
+      <span class="muted" style="font-size:12px;align-self:center"><span class="kbd">J</span>/<span class="kbd">K</span> trường · <span class="kbd">Enter</span> xác nhận · <span class="kbd">Esc</span> thoát ô · <span class="kbd">N</span> tiếp</span>
+    </div>
+    {% if reasons %}<div class="warnbox" style="margin-top:8px"><strong>Cần rà soát:</strong> {{ reasons|join('; ') }}</div>{% endif %}
+
+    <fieldset>
+      <legend>Loại văn bản</legend>
+      <div class="frow"><label>Mẫu GP</label>
+        <select name="loai_van_ban" {{ 'disabled' if not can_review }}>{% for v, l in loais %}<option value="{{ v }}" {{ 'selected' if data.get('loai_van_ban') == v }}>{{ l }}</option>{% endfor %}</select><span></span></div>
+      <div class="frow"><label>Tên loại GP</label><input type="text" name="ten_loai_giay_phep" value="{{ data.get('ten_loai_giay_phep') or '' }}" {{ 'readonly' if not can_review }}><span></span></div>
+    </fieldset>
+
+    {% for g in groups %}
+    <fieldset>
+      <legend>{{ g.title }}</legend>
+      {% for f in g.fields %}
+      <div class="frow {{ 'c-' ~ f.conf if f.conf in ('medium', 'low') }}" data-path="{{ f.path }}" data-page="{{ f.page or '' }}">
+        <label for="f-{{ f.path }}" title="{{ f.path }}">{{ f.label }}{% if f.page %} <span class="muted">·tr{{ f.page }}</span>{% endif %}</label>
+        {% if f.long %}<textarea id="f-{{ f.path }}" name="f.{{ f.path }}" rows="2" {{ 'readonly' if not can_review }}>{{ f.value }}</textarea>
+        {% else %}<input id="f-{{ f.path }}" type="text" name="f.{{ f.path }}" value="{{ f.value }}" {{ 'readonly' if not can_review }}
+               {% if f.path == 'ngay_cap' %}placeholder="dd/mm/yyyy"{% endif %}>{% endif %}
+        <span class="ok" title="Đã xác nhận">✓</span>
+        <input type="hidden" name="c.{{ f.path }}" value="">
+        {% set low = f.conf in ('medium', 'low') %}
+        {% if f.note or f.verified_by or low %}
+        <div class="meta">{{ ('Tin cậy: ' ~ CONF_LABEL[f.conf] ~ ' · ') if low }}{{ f.note or '' }}{% if f.verified_by %} <span class="vb">✔ {{ f.verified_by }}</span>{% endif %}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </fieldset>
+    {% endfor %}
+
+    <fieldset>
+      <legend>Ấn phẩm</legend>
+      <div style="overflow-x:auto">
+      <table class="mini">
+        <tr>{% for k in AN_PHAM_KEYS %}<th>{{ AN_PHAM_LABELS[k] }}</th>{% endfor %}<th></th></tr>
+        <template x-for="(r, i) in anPham" :key="i">
+          <tr>
+            <td><select :name="`ap-${i}-loai_hinh`" x-model="r.loai_hinh">{% for v, l in loai_hinh %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></td>
+            {% for k in AN_PHAM_KEYS[1:] %}<td><input type="text" :name="`ap-${i}-{{ k }}`" x-model="r.{{ k }}" style="min-width:90px"></td>{% endfor %}
+            <td><button type="button" class="danger" @click="anPham.splice(i, 1); dirty = true" title="Xóa dòng">×</button></td>
+          </tr>
+        </template>
+      </table>
+      </div>
+      {% if can_review %}<button type="button" @click="anPham.push({loai_hinh: 'BAO_IN'}); dirty = true">+ Thêm ấn phẩm</button>{% endif %}
+    </fieldset>
+
+    <fieldset>
+      <legend>Lãnh đạo</legend>
+      <table class="mini">
+        <tr><th>Chức vụ</th><th>Họ tên</th><th></th></tr>
+        <template x-for="(r, i) in lanhDao" :key="i">
+          <tr>
+            <td><select :name="`ld-${i}-chuc_vu`" x-model="r.chuc_vu">{% for v, l in chuc_vu %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></td>
+            <td><input type="text" :name="`ld-${i}-ho_ten`" x-model="r.ho_ten"></td>
+            <td><button type="button" class="danger" @click="lanhDao.splice(i, 1); dirty = true">×</button></td>
+          </tr>
+        </template>
+      </table>
+      {% if can_review %}<button type="button" @click="lanhDao.push({chuc_vu: 'TONG_BIEN_TAP', ho_ten: ''}); dirty = true">+ Thêm lãnh đạo</button>{% endif %}
+    </fieldset>
+
+    <fieldset>
+      <legend>GP được thay thế</legend>
+      <table class="mini">
+        <tr><th>Số GP</th><th>Ngày (dd/mm/yyyy)</th><th></th></tr>
+        <template x-for="(r, i) in thayThe" :key="i">
+          <tr>
+            <td><input type="text" :name="`tt-${i}-so_gp`" x-model="r.so_gp"></td>
+            <td><input type="text" :name="`tt-${i}-ngay`" x-model="r.ngay"></td>
+            <td><button type="button" class="danger" @click="thayThe.splice(i, 1); dirty = true">×</button></td>
+          </tr>
+        </template>
+      </table>
+      {% if can_review %}<button type="button" @click="thayThe.push({so_gp: '', ngay: ''}); dirty = true">+ Thêm</button>{% endif %}
+    </fieldset>
+  </form>
+  {% endif %}
+
+    <fieldset>
+      <legend>Văn bản cùng thư mục báo</legend>
+      {% if related %}
+      <table class="related">
+        <tr><th>File</th><th>Loại</th><th>Số GP</th><th>Ngày cấp</th><th></th></tr>
+        {% for r in related %}
+        <tr><td><a href="/documents/{{ r.id }}">{{ r.file_name }}</a></td><td>{{ r.loai_van_ban|loai_label }}</td>
+            <td>{{ r.so_gp or '' }}</td><td>{{ r.ngay_cap|dmy }}</td><td><span class="badge st-{{ r.status }}">{{ r.status|status_label }}</span></td></tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="muted">Không có.</p>{% endif %}
+    </fieldset>
+    <div id="history"></div>
+  </section>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}VTCDocSense{% endblock %} · VTCDocSense</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/vendor/alpine.min.js" defer></script>
+</head>
+<body>
+<header class="top">
+  <span class="brand">VTCDocSense</span>
+  {% if user %}
+  {% set path = request.url.path %}
+  <nav>
+    <a href="/" class="{{ 'on' if path == '/' }}">Tổng quan</a>
+    {% if user.can('reviewer') %}<a href="/upload" class="{{ 'on' if path.startswith('/upload') or path.startswith('/batches') }}">Tải lên</a>{% endif %}
+    <a href="/documents" class="{{ 'on' if path.startswith('/documents') }}">Danh sách</a>
+    {% if user.can('reviewer') %}<a href="/review/next">Rà soát tiếp</a>{% endif %}
+    {% if user.can('admin') %}<a href="/admin" class="{{ 'on' if path.startswith('/admin') }}">Quản trị</a>{% endif %}
+  </nav>
+  <span class="who">{{ user.email }} · {{ user.role.value }}<a href="/logout">Đăng xuất</a></span>
+  {% endif %}
+</header>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

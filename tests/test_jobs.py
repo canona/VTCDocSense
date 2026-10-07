@@ -96,7 +96,9 @@ def test_upload_zip_processes_and_logs_calls(env: tuple[TestClient, Settings, Mo
     client, settings, provider = env
     text_pdf = images_to_pdf([text_page()])  # ảnh không có lớp chữ -> phân loại bằng model (mock)
     data = _zip({"BÁO A/gp1.pdf": text_pdf, "BÁO A/gp2.pdf": text_pdf, "BÁO B/x.pdf": text_pdf})
-    r = client.post("/api/batches", files={"file": ("lo.zip", data, "application/zip")})
+    r = client.post(
+        "/api/batches", files={"file": ("lo.zip", data, "application/zip")}, data={"auto_start": "true"}
+    )
     assert r.status_code == 202, r.text
     body = r.json()
     assert len(body["documents"]) == 3 and all(d["job_id"].startswith("doc:") for d in body["documents"])
@@ -115,7 +117,7 @@ def test_upload_zip_processes_and_logs_calls(env: tuple[TestClient, Settings, Mo
 
     calls = client.get("/api/llm-calls").json()
     assert len(calls["calls"]) == 6  # 3 file x (phân loại + trích xuất)
-    assert all(not c["live"] and c["cost_usd"] == 0 for c in calls["calls"])
+    assert all(not c["live"] and c["cost_vnd"] == 0 for c in calls["calls"])
     assert calls["today_live"]["calls"] == 0
     assert len(provider.calls) == 6
 
@@ -125,7 +127,9 @@ def test_upload_rejects_non_pdf_and_failed_status(env: tuple[TestClient, Setting
     r = client.post("/api/documents", files={"files": ("a.pdf", b"not a pdf", "application/pdf")})
     assert r.status_code == 415
     broken = b"%PDF-1.4 broken"
-    r = client.post("/api/documents", files={"files": ("b.pdf", broken, "application/pdf")})
+    r = client.post(
+        "/api/documents", files={"files": ("b.pdf", broken, "application/pdf")}, data={"auto_start": "true"}
+    )
     assert r.status_code == 202
     d = client.get(f"/api/documents/{r.json()['documents'][0]['id']}").json()
     assert d["status"] == "failed" and "PdfError" in d["error"]
@@ -143,9 +147,23 @@ def test_auto_approved_only_when_critical_high(
     gp["co_quan_bao_chi"] = {"ten": {"value": "Báo An Giang", "confidence": "high"}}
     provider.responses["GiayPhep"] = gp
     r = client.post(
-        "/api/documents", files={"files": ("c.pdf", images_to_pdf([text_page()]), "application/pdf")}
+        "/api/documents",
+        files={"files": ("c.pdf", images_to_pdf([text_page()]), "application/pdf")},
+        data={"auto_start": "true"},
     )
     assert client.get(f"/api/documents/{r.json()['documents'][0]['id']}").json()["status"] == expected
+
+
+def test_upload_waits_for_start(env: tuple[TestClient, Settings, MockProvider]) -> None:
+    client, _, provider = env
+    pdf = images_to_pdf([text_page()])
+    r = client.post("/api/documents", files={"files": ("w.pdf", pdf, "application/pdf")}).json()
+    assert r["started"] is False and r["estimate"]["documents"] == 1 and r["estimate"]["scan_pages"] == 1
+    assert r["documents"][0]["status"] == "uploaded" and provider.calls == []
+    s = client.post(f"/api/batches/{r['batch_id']}/start").json()
+    assert s["started"] == 1
+    status = client.get(f"/api/documents/{r['documents'][0]['id']}").json()["status"]
+    assert status in ("needs_review", "auto_approved") and provider.calls
 
 
 def test_internal_api_closed_outside_local(env: tuple[TestClient, Settings, MockProvider]) -> None:

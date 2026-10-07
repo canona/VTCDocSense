@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Danh sách{% endblock %}
+{% block content %}
+<h1>Danh sách document</h1>
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+<form class="filters" method="get" action="/documents"
+      hx-get="/documents" hx-target="#doc-table" hx-trigger="change, keyup changed delay:400ms from:input[type=text]" hx-push-url="true">
+  <label>Tìm (file / số GP)<input type="text" name="q" value="{{ q.get('q', '') }}"></label>
+  <label>Trạng thái<select name="status"><option value="">Tất cả</option>
+    {% for v, l in statuses %}<option value="{{ v }}" {{ 'selected' if q.get('status') == v }}>{{ l }}</option>{% endfor %}</select></label>
+  <label>Thư mục báo<input type="text" name="folder" value="{{ q.get('folder', '') }}"></label>
+  <label>Loại văn bản<select name="loai"><option value="">Tất cả</option>
+    {% for v, l in loais %}<option value="{{ v }}" {{ 'selected' if q.get('loai') == v }}>{{ l }}</option>{% endfor %}</select></label>
+  <label>Ngày cấp từ<input type="date" name="from" value="{{ q.get('from', '') }}"></label>
+  <label>đến<input type="date" name="to" value="{{ q.get('to', '') }}"></label>
+  <label>Người rà soát<input type="text" name="reviewer" value="{{ q.get('reviewer', '') }}"></label>
+  {% if q.get('batch_id') %}<input type="hidden" name="batch_id" value="{{ q['batch_id'] }}">{% endif %}
+  <noscript><button type="submit">Lọc</button></noscript>
+  <a class="btn" href="/documents">Bỏ lọc</a>
+</form>
+<form method="post" action="/documents/bulk" id="bulk">
+  <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center">
+    {% if user.can('reviewer') %}<button name="action" value="approve" type="submit">Duyệt mục đã chọn</button>{% endif %}
+    <button name="action" value="export" type="submit">Xuất ZIP mục đã chọn</button>
+    <a class="btn" href="/export.zip?{{ export_qs }}">Xuất ZIP theo bộ lọc</a>
+    <a class="btn" href="/export.zip?{{ export_qs }}&only_approved=1">Xuất ZIP (chỉ bản đã duyệt)</a>
+  </div>
+  <div id="doc-table">{% include "_doc_rows.html" %}</div>
+</form>
+{% endblock %}

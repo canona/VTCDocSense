@@ -97,14 +97,15 @@ def _thong_tin(ws: Worksheet, gp: GiayPhep, folder: str | None, extracted_on: da
         ws.append(["Cần rà soát", "\n".join(gp.review_reasons)])
         ws.cell(row=ws.max_row, column=1).font = Font(bold=True, color="C00000")
     meta = gp.meta
-    ws.append([])
-    ws.append(
-        [
-            "Xử lý",
-            f"{meta.provider}/{meta.model} · {meta.duration_ms} ms · "
-            f"{meta.input_tokens}+{meta.output_tokens} token · {meta.logical_pages}/{meta.pages} trang",
-        ]
-    )
+    if meta.provider:  # bản cho đối tác (API /v1) đã bỏ thông tin provider/model
+        ws.append([])
+        ws.append(
+            [
+                "Xử lý",
+                f"{meta.provider}/{meta.model} · {meta.duration_ms} ms · "
+                f"{meta.input_tokens}+{meta.output_tokens} token · {meta.logical_pages}/{meta.pages} trang",
+            ]
+        )
 
     ws.column_dimensions["A"].width = 26
     ws.column_dimensions["B"].width = 90
